@@ -17,7 +17,7 @@ def load_patterns() -> dict:
 
 def main():
     # Initialise les chemins
-    pdf_folder = Path("data_factures")
+    pdf_folder = Path("data_factures/facturesv2")
     output_file = Path("factures.json")
 
     # Charge les patterns
@@ -31,17 +31,17 @@ def main():
         try:
             print(f"\nTraitement de {pdf_path.name}...")
 
-            # Extrait le texte
-            text = extract_text_from_pdf(str(pdf_path))
-            if not text:
+            # Extrait le texte et les tables avec pdfplumber
+            extracted = extract_text_from_pdf(str(pdf_path))
+            if not extracted:
                 raise ValueError("Pas de texte extrait")
 
             # Extrait les données structurées
-            data = extract_data(text, patterns)
+            data = extract_data(extracted, patterns)
 
             # Ajoute au dictionnaire principal
             all_invoices[pdf_path.name] = {
-                'text': text,
+                'text': extracted['text'],
                 'data': data
             }
 

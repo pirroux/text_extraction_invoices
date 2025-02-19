@@ -1,207 +1,93 @@
 {
-  "facture_FAC00000536 - Canadiode (1).pdf": {
-    "text": "NOMADS SURFING -  22 RUE ANDRE MAGINOT 33700 MERIGNAC - Siret : 83222453900011\nLibellé\nQté\nPU HT\nRem.\nMontant HT\nTVA\nPLA-PAC-V2\nART00000017 -\n1,00\n562,50 €\n0,00%\n562,50 €\n20,00%\nACC-DER-QUAD\nART00000027 -\n1,00\n37,50 €\n0,00%\n37,50 €\n0,00%\nACC-BOADBAG-SHORT6-6\nART00000124 -\n1,00\n125,00 €\n0,00%\n125,00 €\n20,00%\nACC-WAX_WARM\nART00000149 -\n2,00\n3,33 €\n100,00%\n0,00 €\n20,00%\nLe montant total s'élève à huit cent soixante-deux euros et cinquante centimes\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce). \nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nDétail de la TVA\nCode\nBase HT\nTaux\nMontant\nExonérée\n37,50 €\n0,00%\n0,00 €\nNormale\n687,50 €\n20,00%\n137,50 €\nRèglement\nChèque\nEchéance(s)\n862,50 € au 23/08/2023 \nCoordonnées bancaires\nNom\nBPACA\nIBAN\nFR76 1090 7000 7486 0217 7452 573\nBIC\nCCBPFRPPBDX\nTotal HT\n725,00 €\nTVA\n137,50 €\nTotal TTC\n862,50 €\nFacture\nN° : FAC00000536\nDate : 23/08/2023\nN° client : CLT00000304\nMonsieur Pierre Canadas\n130 rue Achard\nW1\n33300 Bordeaux\nNOMADS SURFING\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com",
-    "data": {
-      "type_facture": "type facture non renseigné",
-      "numero_facture": "FAC00000536",
-      "date_facture": "23/08/2023",
-      "numero_client": "CLT00000304",
-      "nom_client": "Monsieur Pierre Canadas",
-      "TOTAL": {
-        "total_ht": 725.0,
-        "tva": 137.5,
-        "total_ttc": 862.5
-      },
-      "nombre_articles": 4,
-      "articles": [
-        {
-          "reference": "ART00000017",
-          "description": "PLA-PAC-V2",
-          "quantite": 1.0,
-          "prix_unitaire": 562.5,
-          "remise": 0.0,
-          "montant_ht": 562.5,
-          "tva": 0.2
-        },
-        {
-          "reference": "ART00000027",
-          "description": "ACC-DER-QUAD",
-          "quantite": 1.0,
-          "prix_unitaire": 37.5,
-          "remise": 0.0,
-          "montant_ht": 37.5,
-          "tva": 0.0
-        },
-        {
-          "reference": "ART00000124",
-          "description": "ACC-BOADBAG-SHORT6-6",
-          "quantite": 1.0,
-          "prix_unitaire": 125.0,
-          "remise": 0.0,
-          "montant_ht": 125.0,
-          "tva": 0.2
-        },
-        {
-          "reference": "ART00000149",
-          "description": "ACC-WAX_WARM",
-          "quantite": 2.0,
-          "prix_unitaire": 3.33,
-          "remise": 1.0,
-          "montant_ht": 0.0,
-          "tva": 0.2
-        }
-      ],
-      "detailTVA": [
-        {
-          "type": "TVAexoneree",
-          "base_ht": 37.5,
-          "taux": 0.0,
-          "montant": 0.0
-        },
-        {
-          "type": "TVAnormale",
-          "base_ht": 687.5,
-          "taux": 20.0,
-          "montant": 137.5
-        }
-      ],
-      "reglement": "Chèque"
-    }
-  },
-  "site nomads-552.50.pdf": {
-    "text": "NOMADS SURFING -  22 RUE ANDRE MAGINOT 33700 MERIGNAC FRANCE - Siret : 83222453900011\nSite internet \nHamonet Alexandre \nN° de commande : 29347\nLibellé\nQté\nPU HT\nRem.\nMontant HT\nTVA\nPLA-KUD\nART00000015 -\n1,00\n541,67 €\n15,00%\n460,42 €\n20,00%\nLe montant total s'élève à cinq cent cinquante-deux euros et cinquante centimes\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce). \nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nDétail de la TVA\nCode\nBase HT\nTaux\nMontant\nNormale\n460,42 €\n20,00%\n92,08 €\nRèglement\nChèque\nEchéance(s)\n552,50 € au 04/03/2024 \nCoordonnées bancaires\nNom\nBPACA\nIBAN\nFR76 1090 7000 7486 0217 7452 573\nBIC\nCCBPFRPPBDX\nTotal HT\n460,42 €\nTVA\n92,08 €\nTotal TTC\n552,50 €\nFacture\nN° : FAC00000667\nDate : 04/03/2024\nN° client : CLT00000347\nMadame inconnue inconnue\n130 rue achard\n33300 Bordeaux\nNOMADS SURFING\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com\n20.04",
-    "data": {
-      "type_facture": "20.04",
-      "numero_facture": "FAC00000667",
-      "date_facture": "04/03/2024",
-      "numero_client": "CLT00000347",
-      "nom_client": "Hamonet Alexandre",
-      "TOTAL": {
-        "total_ht": 460.42,
-        "tva": 92.08,
-        "total_ttc": 552.5
-      },
-      "nombre_articles": 1,
-      "articles": [
-        {
-          "reference": "ART00000015",
-          "description": "PLA-KUD",
-          "quantite": 1.0,
-          "prix_unitaire": 541.67,
-          "remise": 0.15,
-          "montant_ht": 460.42,
-          "tva": 0.2
-        }
-      ],
-      "detailTVA": [
-        {
-          "type": "TVAnormale",
-          "base_ht": 460.42,
-          "taux": 20.0,
-          "montant": 92.08
-        }
-      ],
-      "reglement": "Chèque"
-    }
-  },
-  "CESSES-59-(année2023).pdf": {
-    "text": "NOMADS SURFING -  22 RUE ANDRE MAGINOT 33700 MERIGNAC - Siret : 83222453900011\n20.01.05\nLibellé\nQté\nPU HT\nRem.\nMontant HT\nTVA\nponcho enfant\nART00000212 -\n1,00\n42,50 €\n0,00%\n42,50 €\n20,00%\nTransport\nART00000078 -\n1,00\n6,66667 €\n0,00%\n6,67 €\n20,00%\nLe montant total s'élève à cinquante-neuf euros\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce). \nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nDétail de la TVA\nCode\nBase HT\nTaux\nMontant\nNormale\n49,17 €\n20,00%\n9,83 €\nRèglement\nVirement\nEchéance(s)\n59,00 € au 23/12/2023 \nCoordonnées bancaires\nNom\nBPACA\nIBAN\nFR76 1090 7000 7486 0217 7452 573\nBIC\nCCBPFRPPBDX\nTotal HT\n49,17 €\nTVA\n9,83 €\nTotal TTC\n59,00 €\nFacture\nN° : FAC00000620\nDate : 23/12/2023\nN° client : CLT00000068\nMonsieur Arnaud Cesses\n462 A BOULEVARD DES EPINETTES\n01220 DIVONNE LES BAINS\nFrance\nNOMADS SURFING\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com\n20.01",
-    "data": {
-      "type_facture": "20.01",
-      "numero_facture": "FAC00000620",
-      "date_facture": "23/12/2023",
-      "numero_client": "CLT00000068",
-      "nom_client": "Monsieur Arnaud Cesses",
-      "TOTAL": {
-        "total_ht": 49.17,
-        "tva": 9.83,
-        "total_ttc": 59.0
-      },
-      "nombre_articles": 2,
-      "articles": [
-        {
-          "reference": "ART00000212",
-          "description": "poncho enfant",
-          "quantite": 1.0,
-          "prix_unitaire": 42.5,
-          "remise": 0.0,
-          "montant_ht": 42.5,
-          "tva": 0.2
-        },
-        {
-          "reference": "ART00000078",
-          "description": "Transport",
-          "quantite": 1.0,
-          "prix_unitaire": 6.66667,
-          "remise": 0.0,
-          "montant_ht": 6.67,
-          "tva": 0.2
-        }
-      ],
-      "detailTVA": [
-        {
-          "type": "TVAnormale",
-          "base_ht": 49.17,
-          "taux": 20.0,
-          "montant": 9.83
-        }
-      ],
-      "reglement": "Virement"
-    }
-  },
-  "CITY SURF-78.pdf": {
-    "text": "NOMADS SURFING -  22 RUE ANDRE MAGINOT 33700 MERIGNAC - Siret : 83222453900011\nLibellé\nQté\nPU HT\nRem.\nMontant HT\nTVA\nFins thruster FCS1 100% recycled fishing nets -\nART00000020 -\npro\n2,00\n16,50 €\n0,00%\n33,00 €\n0,00%\nFins thruster FCS1 biosourced - pro\nART00000100 -\n2,00\n22,50 €\n0,00%\n45,00 €\n0,00%\nExonération TVA, article 282 ter I du code général des impôts\nLe montant total s'élève à soixante-dix-huit euros\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce). \nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nDétail de la TVA\nCode\nBase HT\nTaux\nMontant\nExonérée\n78,00 €\n0,00%\n0,00 €\nRèglement\nVirement\nEchéance(s)\n78,00 € au 19/06/2023 \nCoordonnées bancaires\nNom\nBPACA\nIBAN\nFR76 1090 7000 7486 0217 7452 573\nBIC\nCCBPFRPPBDX\nTotal HT\n78,00 €\nTVA\n0,00 €\nTotal TTC\n78,00 €\nFacture\nN° : FAC00000482\nDate : 19/06/2023\nN° client : CLT00000324\nN° TVA : IT01406520500\nCITY SURF\nViale del tirreno 353\nCalambrone (PI)\n56128 Tirrenia\nITALIE\nNOMADS SURFING\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com\n20.02",
-    "data": {
-      "type_facture": "20.02",
-      "numero_facture": "FAC00000482",
-      "date_facture": "19/06/2023",
-      "numero_client": "CLT00000324",
-      "nom_client": "CITY SURF",
-      "TOTAL": {
-        "total_ht": 78.0,
-        "tva": 0.0,
-        "total_ttc": 78.0
-      },
-      "nombre_articles": 1,
-      "articles": [
-        {
-          "reference": "ART00000100",
-          "description": "Fins thruster FCS1 biosourced - pro",
-          "quantite": 2.0,
-          "prix_unitaire": 22.5,
-          "remise": 0.0,
-          "montant_ht": 45.0,
-          "tva": 0.0
-        }
-      ],
-      "detailTVA": [
-        {
-          "type": "TVAexoneree",
-          "base_ht": 78.0,
-          "taux": 0.0,
-          "montant": 0.0
-        }
-      ],
-      "reglement": "Virement"
-    }
-  },
-  "GREGORY BASS.pdf": {
-    "text": "Le jod OERÈ/U namadssrtne\nn'a 20.04\n\nFACTURE\n\nde commande: 29697\n\nx 1 15€\nï ne\nï se\nSoussotat\nExpédition\nTotal 45,90 € (ent 765€\n\nmm\n\nEn cas de retard de paiement. indemnité foraare ga pourrais de recouvrement: 40,00 €\n",
+  "facture_BRO00001092.pdf": {
+    "text": "Facture Brouillon\nN° : BRO00001092\nDate : 19/02/2025\nN° client : CLT00000004\nMonsieur Tabar Daniel\nNOMADS SURFING\n2590, Boulevard Paul Valery\nRésidence Le Véga Batiment A\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com 34070 Montpellier\nFrance\nCatégorie de vente : 20.01.01\nCommentaire : planche avec répa donc remisée\nStatut paiement : A payer\nLibellé Qté PU HT Rem. Montant HT TVA\nART00000004 -PLA-BAL-LIN 1,00 766,67 € 0,00% 766,67 € 20,00%\nDétail de la TVA Total HT 766,67 €\nTVA 153,33 €\nCode Base HT Taux Montant\nTotal TTC 920,00 €\nNormale 766,67 € 20,00% 153,33 €\nRèglement Chèque\nEchéance(s) 920,00 € au 19/02/2025\nCoordonnées bancaires\nNom BPACA\nIBAN FR76 1090 7000 7486 0217 7452 573\nBIC CCBPFRPPBDX\nLe montant total s'élève à neuf cent vingt euros\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce).\nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nNOMADS SURFING - 22 RUE ANDRE MAGINOT 33700 MERIGNAC FRANCE - Siret : 83222453900011",
     "data": {
       "type_facture": "type facture non renseigné",
       "numero_facture": "",
-      "date_facture": "",
-      "numero_client": "",
-      "nom_client": "",
+      "date_facture": "19/02/2025",
+      "numero_client": "CLT00000004",
+      "nom_client": "Monsieur Tabar Daniel",
+      "reglement": "cheque",
+      "categorie_vente": "20.01.01",
+      "commentaire": "planche avec répa donc remisée",
+      "statut_paiement": "A payer",
       "TOTAL": {
-        "total_ht": 0.0,
-        "tva": 0.0,
-        "total_ttc": 0.0
+        "total_ht": 766.67,
+        "tva": 153.33,
+        "total_ttc": 920.0,
+        "acompte": 0.0
       },
-      "nombre_articles": 0,
-      "articles": [],
+      "detailTVA": [
+        {
+          "type": "TVAnormale",
+          "base_ht": 766.67,
+          "taux": 20.0,
+          "montant": 153.33
+        }
+      ],
+      "nombre_articles": 1,
+      "articles": [
+        {
+          "reference": "ART00000004",
+          "description": "PLA-BAL-LIN",
+          "quantite": 1.0,
+          "prix_unitaire": 766.67,
+          "remise": 0.0,
+          "montant_ht": 766.67,
+          "tva": 20.0
+        }
+      ]
+    }
+  },
+  "facture_FAC00000944.pdf": {
+    "text": "Facture\nN° : FAC00000944\nDate : 11/02/2025\nN° client : CLT00000231\nMHCS\nNOMADS SURFING\n9 Avenue de Champagne\n51200 Epernay\nEmail : thomas@nomads-surfing.com\nSite web : https://www.nomads-surfing.com FRANCE\nCommande n°: 4501830197\n20.02\nLibellé Qté PU HT Rem. Montant HT TVA\nART00000283 -Planche de surf VEUVE CLICQUOT EGG 6'6 10,00 1 015,00 € 0,00% 10 150,00 € 20,00%\nART00000284 -Housse de planche VEUVE CLICQUOT 10,00 250,00 € 0,00% 2 500,00 € 20,00%\nART00000285 -Packaging FLEXI HEX - carton nid d'abeille 10,00 10,00 € 0,00% 100,00 € 20,00%\nDétail de la TVA Total HT 12 750,00 €\nAcompte(s) reçu(s) HT 6 375,00 €\nCode Base HT Taux Montant\nTotal HT net 6 375,00 €\nNormale 6 375,00 € 20,00% 1 275,00 €\nTVA 1 275,00 €\nRèglement Chèque\nTotal TTC 7 650,00 €\nEchéance(s) Acompte de 7 650,00 € au 16/12/2024\n7 650,00 € au 11/02/2025\nEchéance(s)\n7 650,00 € réglée le 16/12/2024 par Chèque\nréglée(s)\nCoordonnées bancaires\nNom BPACA\nIBAN FR76 1090 7000 7486 0217 7452 573\nBIC CCBPFRPPBDX\nLe montant total s'élève à sept mille six cent cinquante euros\nN° TVA : FR38832224539\nPas d'escompte pour règlement anticipé. En cas de retard de paiement, une pénalité égale à 3 fois le taux intérêt légal sera exigible (Article L 441-10, alinéa 12 du Code de Commerce).\nPour tout professionnel, en sus des indemnités de retard, toute somme, y compris l'acompte, non payée à sa date d'exigibilité produira de plein droit le paiement d'une indemnité\nforfaitaire de 40 euros due au titre des frais de recouvrement (Art. 441-6, I al. 12 du code de commerce et D. 441-5 ibidem).\nNOMADS SURFING - 22 RUE ANDRE MAGINOT 33700 MERIGNAC FRANCE - Siret : 83222453900011",
+    "data": {
+      "type_facture": "20.02",
+      "numero_facture": "FAC00000944",
+      "date_facture": "11/02/2025",
+      "numero_client": "CLT00000231",
+      "nom_client": "MHCS",
+      "reglement": "cheque",
+      "categorie_vente": "",
+      "commentaire": "",
+      "statut_paiement": "",
+      "TOTAL": {
+        "total_ht": 12750.0,
+        "tva": 1275.0,
+        "total_ttc": 7650.0,
+        "acompte": 6375.0
+      },
       "detailTVA": [],
-      "reglement": ""
+      "nombre_articles": 3,
+      "articles": [
+        {
+          "reference": "ART00000283",
+          "description": "Planche de surf VEUVE CLICQUOT EGG 6'6",
+          "quantite": 10.0,
+          "prix_unitaire": 1015.0,
+          "remise": 0.0,
+          "montant_ht": 10150.0,
+          "tva": 20.0
+        },
+        {
+          "reference": "ART00000284",
+          "description": "Housse de planche VEUVE CLICQUOT",
+          "quantite": 10.0,
+          "prix_unitaire": 250.0,
+          "remise": 0.0,
+          "montant_ht": 2500.0,
+          "tva": 20.0
+        },
+        {
+          "reference": "ART00000285",
+          "description": "Packaging FLEXI HEX - carton nid d'abeille",
+          "quantite": 10.0,
+          "prix_unitaire": 10.0,
+          "remise": 0.0,
+          "montant_ht": 100.0,
+          "tva": 20.0
+        }
+      ]
     }
   }
 }

@@ -1,5 +1,5 @@
 import re
-from typing import Dict
+from typing import Dict, List
 
 def convert_to_float(value: str) -> float:
     """Convertit une chaîne en float en gérant les formats français"""
@@ -10,8 +10,89 @@ def convert_to_float(value: str) -> float:
     except (ValueError, AttributeError):
         return 0.0
 
-def extract_data(text: str, patterns: Dict) -> Dict:
-    """Extrait les données structurées du texte"""
+def extract_articles_and_totals(text: str) -> Dict:
+    """Extrait les articles et les totaux du texte"""
+    articles = []
+    totals = {}
+
+    # Pattern pour les articles sous "Libellé"
+    article_pattern = (
+        r'ART(\d+)\s*-\s*([^\n]+?)\s*'  # Référence et description
+        r'(\d+,\d+)\s*'                 # Quantité
+        r'(\d+[\s\d]*,\d+)\s*€\s*'      # Prix unitaire
+        r'(\d+,\d+)%\s*'                # Remise
+        r'(\d+[\s\d]*,\d+)\s*€\s*'      # Montant HT
+        r'(\d+,\d+)%'                   # TVA
+    )
+
+    for match in re.finditer(article_pattern, text, re.MULTILINE | re.DOTALL):
+        try:
+            prix_unitaire = match.group(4).replace(' ', '')
+            montant_ht = match.group(6).replace(' ', '')
+
+            articles.append({
+                'reference': f"ART{match.group(1)}",
+                'description': match.group(2).strip(),
+                'quantite': float(match.group(3).replace(',', '.')),
+                'prix_unitaire': float(prix_unitaire.replace(',', '.')),
+                'remise': float(match.group(5).replace(',', '.')) / 100,
+                'montant_ht': float(montant_ht.replace(',', '.')),
+                'tva': float(match.group(7).replace(',', '.'))  # Déjà en pourcentage
+            })
+        except (IndexError, ValueError) as e:
+            print(f"Erreur lors de l'extraction d'un article: {e}")
+            continue
+
+    # Pattern pour les totaux
+    total_pattern = r'Total HT\s*([\d\s,]+)\s*€'
+    for match in re.finditer(total_pattern, text, re.MULTILINE):
+        try:
+            total_ht = match.group(1).replace(' ', '')
+            totals['total_ht'] = float(total_ht.replace(',', '.'))
+        except (IndexError, ValueError) as e:
+            print(f"Erreur lors de l'extraction du total HT: {e}")
+            continue
+
+    return {'articles': articles, 'totals': totals}
+
+def extract_articles_from_text(text: str) -> List[Dict]:
+    """Extrait les articles à partir du texte de la table"""
+    articles = []
+
+    # Pattern modifié pour accepter les chiffres dans la description
+    article_pattern = (
+        r'ART(\d+)\s*-\s*([^€]+?)\s+'    # Référence et description (accepte tout sauf €)
+        r'(\d+,\d+)\s+'                  # Quantité
+        r'(\d+[\s\d]*,\d+)\s*€\s+'       # Prix unitaire
+        r'(\d+,\d+)%\s+'                 # Remise
+        r'(\d+[\s\d]*,\d+)\s*€\s+'       # Montant HT
+        r'(\d+,\d+)%'                    # TVA
+    )
+
+    for match in re.finditer(article_pattern, text, re.MULTILINE | re.DOTALL):
+        try:
+            # Nettoyage des espaces dans les nombres
+            prix_unitaire = match.group(4).replace(' ', '')
+            montant_ht = match.group(6).replace(' ', '')
+
+            articles.append({
+                'reference': f"ART{match.group(1)}",
+                'description': match.group(2).strip(),
+                'quantite': float(match.group(3).replace(',', '.')),
+                'prix_unitaire': float(prix_unitaire.replace(',', '.')),
+                'remise': float(match.group(5).replace(',', '.')) / 100,
+                'montant_ht': float(montant_ht.replace(',', '.')),
+                'tva': float(match.group(7).replace(',', '.'))  # Déjà en pourcentage
+            })
+        except (IndexError, ValueError) as e:
+            print(f"Erreur lors de l'extraction d'un article: {e}")
+            continue
+
+    return articles
+
+def extract_data(extracted_data: Dict, patterns: Dict) -> Dict:
+    """Extrait les données structurées du texte et des tables"""
+    text = extracted_data['text']
 
     # Extraction du type de facture (format 20.XX)
     type_facture_pattern = r'(?:^|\n)(?:20\.(?:0[1-9]|[1-9]\d))\b'
@@ -65,42 +146,24 @@ def extract_data(text: str, patterns: Dict) -> Dict:
                 nom_client = potential_name
                 break
 
-    # Pattern pour les articles dans le tableau
-    article_pattern = r'([A-Za-z0-9-]+(?:[^\n]+)?)\nART(\d+)\s*-\n(\d+,\d+)\n(\d+,\d+)\s*€\n(\d+,\d+)%\n(\d+,\d+)\s*€\n(\d+,\d+)%'
-
-    # Extraction des articles
-    articles = []
-    for match in re.finditer(article_pattern, text, re.MULTILINE):
-        try:
-            # Conversion des pourcentages en décimal (20% -> 0.20)
-            remise = convert_to_float(match.group(5)) / 100
-            tva = convert_to_float(match.group(7)) / 100
-
-            articles.append({
-                'reference': f"ART{match.group(2)}",
-                'description': match.group(1).strip(),
-                'quantite': convert_to_float(match.group(3)),
-                'prix_unitaire': convert_to_float(match.group(4)),
-                'remise': remise,
-                'montant_ht': convert_to_float(match.group(6)),
-                'tva': tva
-            })
-        except (IndexError, ValueError) as e:
-            print(f"Erreur lors de l'extraction d'un article: {e}")
-            continue
+    # Extraction des articles et des totaux
+    extracted = extract_articles_and_totals(text)
+    articles = extracted['articles']
+    totals = extracted['totals']
 
     # Extraction des totaux
     total_pattern = {
-        'total_ht': r'Total HT\s*:?\s*([\d\s,]+)\s*€',
         'total_tva': r'TVA\s*:?\s*([\d\s,]+)\s*€',
-        'total_ttc': r'Total TTC\s*:?\s*([\d\s,]+)\s*€'
+        'total_ttc': r'Total TTC\s*:?\s*([\d\s,]+)\s*€',
+        'acompte': r'Acompte.*?HT\s*([\d\s,]+)\s*€'  # Pattern simplifié
     }
 
     totaux = {}
     for key, pattern in total_pattern.items():
-        match = re.search(pattern, text, re.IGNORECASE)
+        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
         if match:
-            totaux[key] = convert_to_float(match.group(1))
+            value = match.group(1)
+            totaux[key] = convert_to_float(value)
 
     # Extraction du détail TVA
     detail_tva_pattern = r'(?P<type>Exonérée|Normale)\s*([\d,]+)\s*€\s*([\d,]+)%\s*([\d,]+)\s*€'
@@ -119,12 +182,39 @@ def extract_data(text: str, patterns: Dict) -> Dict:
             print(f"Erreur lors de l'extraction du détail TVA: {e}")
             continue
 
-    # Extraction du type de règlement
-    reglement_pattern = r'Règlement\s*\n([^\n]+)'
-    reglement = ""
-    match = re.search(reglement_pattern, text)
+    # Extraction du type de règlement (amélioration du pattern)
+    reglement_pattern = r'(?:Règlement|Mode de règlement)\s*:?\s*([^\n]+)'
+    reglement = "non renseigné"  # Valeur par défaut
+    match = re.search(reglement_pattern, text, re.IGNORECASE)
     if match:
-        reglement = match.group(1).strip()
+        reglement = match.group(1).strip().lower()
+        # Normalisation du terme "chèque"
+        if "cheque" in reglement or "chèque" in reglement:
+            reglement = "cheque"
+
+    # Extraction de la catégorie de vente
+    categorie_pattern = r'Catégorie de vente\s*:?\s*([^\n]+)'
+    categorie_vente = ""
+    match = re.search(categorie_pattern, text, re.IGNORECASE)
+    if match:
+        categorie_vente = match.group(1).strip()
+
+    # Extraction du commentaire
+    commentaire_pattern = r'Commentaire\s*:?\s*([^\n]+)'
+    commentaire = ""
+    match = re.search(commentaire_pattern, text, re.IGNORECASE)
+    if match:
+        commentaire = match.group(1).strip()
+
+    # Extraction du statut de paiement
+    statut_pattern = r'Statut(?:\s+de)?\s+paiement\s*:?\s*([^\n]+)'
+    statut_paiement = ""
+    match = re.search(statut_pattern, text, re.IGNORECASE)
+    if match:
+        statut_paiement = match.group(1).strip()
+
+    # Extraction des articles depuis le texte
+    articles = extract_articles_from_text(text)
 
     # Construction du résultat final
     data = {
@@ -133,15 +223,70 @@ def extract_data(text: str, patterns: Dict) -> Dict:
         'date_facture': date_facture,
         'numero_client': numero_client,
         'nom_client': nom_client,
+        'reglement': reglement,
+        'categorie_vente': categorie_vente,
+        'commentaire': commentaire,
+        'statut_paiement': statut_paiement,
         'TOTAL': {
-            'total_ht': totaux.get('total_ht', 0.0),
-            'tva': totaux.get('total_tva', 0.0),
-            'total_ttc': totaux.get('total_ttc', 0.0)
+            'total_ht': totals.get('total_ht', 0.0),
+            'tva': totaux['total_tva'] if 'total_tva' in totaux else 0.0,
+            'total_ttc': totaux['total_ttc'] if 'total_ttc' in totaux else 0.0,
+            'acompte': totaux['acompte'] if 'acompte' in totaux else 0.0,
         },
+        'detailTVA': detail_tva,
         'nombre_articles': len(articles),
         'articles': articles,
-        'detailTVA': detail_tva,
-        'reglement': reglement
     }
 
     return data
+
+def extract_articles(text: str, is_meg: bool) -> List[Dict]:
+    """Extrait les articles du texte"""
+    articles = []
+    if is_meg:
+        # Pattern pour les articles MEG basé sur le format tabulaire exact
+        article_pattern = (
+            r'ART(\d+)\s*-\s*([^\n]+?)\s*'  # Référence et description
+            r'(\d+,\d+)\s*'                 # Quantité
+            r'(\d+[\s\d]*,\d+)\s*€\s*'      # Prix unitaire
+            r'(\d+,\d+)%\s*'                # Remise
+            r'(\d+[\s\d]*,\d+)\s*€\s*'      # Montant HT
+            r'(\d+,\d+)%'                   # TVA
+        )
+
+        for match in re.finditer(article_pattern, text, re.MULTILINE | re.DOTALL):
+            try:
+                # Nettoyage des espaces dans les nombres
+                prix_unitaire = match.group(4).replace(' ', '')
+                montant_ht = match.group(6).replace(' ', '')
+
+                articles.append({
+                    'reference': f"ART{match.group(1)}",
+                    'description': match.group(2).strip(),
+                    'quantite': float(match.group(3).replace(',', '.')),
+                    'prix_unitaire': float(prix_unitaire.replace(',', '.')),
+                    'remise': float(match.group(5).replace(',', '.')) / 100,
+                    'montant_ht': float(montant_ht.replace(',', '.')),
+                    'tva': float(match.group(7).replace(',', '.'))  # Déjà en pourcentage
+                })
+            except (IndexError, ValueError) as e:
+                print(f"Erreur lors de l'extraction d'un article MEG: {e}")
+                continue
+    else:
+        # Pattern pour les articles internet (inchangé)
+        article_pattern = r'([A-Za-z0-9-]+(?:[^\n]+)?)\nUGS\s*:\s*([^\n]+)\n'
+        for match in re.finditer(article_pattern, text, re.MULTILINE):
+            try:
+                articles.append({
+                    'reference': match.group(2).strip(),
+                    'description': match.group(1).strip(),
+                    'quantite': 1,
+                    'prix_unitaire': 0,
+                    'remise': 0,
+                    'montant_ht': 0,
+                    'tva': 20.0
+                })
+            except (IndexError, ValueError) as e:
+                print(f"Erreur lors de l'extraction d'un article: {e}")
+                continue
+    return articles
