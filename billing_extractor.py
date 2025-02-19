@@ -17,30 +17,34 @@ class InvoiceExtractor:
             'total_ttc': 0.0,
             'total_ht': 0.0,
             'tva': 0.0,
-            'frais_expedition': 0.0
+            'frais_expedition': 0.0,
+            'type_expedition': "" if invoice_type == 'internet' else None  # Nouveau champ pour internet
         }
 
         if invoice_type == 'internet':
             # Patterns plus précis pour factures internet
-            sous_total_pattern = r'Sous-total\s+([\d\s]+[,.]?\d*)\s*€'
             total_pattern = r'Total\s+([\d\s]+[,.]?\d*)\s*€\s*\(dont\s+([\d\s]+[,.]?\d*)\s*€\s*TVA\)'
-            expedition_pattern = r'Expédition\s+([^€\n]*?)(?:(\d+[,.]?\d*)\s*€)?(?:\s*\(TTC\)|\s*$)'
-
-            # Extraction du sous-total
-            sous_total_match = re.search(sous_total_pattern, text, re.IGNORECASE)
-            if sous_total_match:
-                amounts['total_ht'] = self.convert_to_float(sous_total_match.group(1))
+            expedition_pattern = r'Expédition\s+(?:([^€\n]*?)(?:(\d+[,.]?\d*)\s*€)?)?\s*(?:\(TTC\))?\s*(?:via\s*)?([^\n]*?)(?=\s*(?:Total|$))'
 
             # Extraction total TTC et TVA
             total_match = re.search(total_pattern, text, re.IGNORECASE)
             if total_match:
                 amounts['total_ttc'] = self.convert_to_float(total_match.group(1))
                 amounts['tva'] = self.convert_to_float(total_match.group(2))
+                amounts['total_ht'] = amounts['total_ttc'] - amounts['tva']
 
-            # Extraction frais d'expédition
+            # Extraction frais et type d'expédition
             expedition_match = re.search(expedition_pattern, text, re.IGNORECASE)
-            if expedition_match and expedition_match.group(2):
-                amounts['frais_expedition'] = self.convert_to_float(expedition_match.group(2))
+            if expedition_match:
+                if expedition_match.group(2):  # Si on a un montant
+                    amounts['frais_expedition'] = self.convert_to_float(expedition_match.group(2))
+                # Combine les parties du type d'expédition (avant et après le montant)
+                type_expedition = ' '.join(filter(None, [
+                    expedition_match.group(1),
+                    expedition_match.group(3)
+                ])).strip()
+                if type_expedition:
+                    amounts['type_expedition'] = type_expedition
 
         elif invoice_type == 'meg':
             # Patterns pour facture MEG
@@ -103,32 +107,32 @@ class InvoiceExtractor:
 
         if invoice_type == 'internet':
             # Pattern simplifié pour articles internet
-            # Capture la ligne entière et extrait les nombres ensuite
-            article_pattern = r'([^\n]+?)(?:\n|$)'
             code_pattern = r'UGS\s*:\s*([^\n]+)'
-
             current_code = ""
-            for line in text.split('\n'):
-                if 'UGS' in line:
-                    # Extraction du code UGS
-                    match = re.search(code_pattern, line)
-                    if match:
-                        current_code = match.group(1).strip()
-                    continue
 
-                # Ignore les lignes non pertinentes
-                if any(x in line for x in ['Poids', 'Taille', 'Colori', 'Total', 'Sous-total', 'Expédition']):
+            # Ignore les lignes qui commencent par ces mots
+            ignore_starts = ['UGS', 'Poids', 'Taille', 'Colori', 'Total', 'Sous-total', 'Expédition', 'En cas']
+
+            for line in text.split('\n'):
+                line = line.strip()
+
+                # Ignore les lignes vides ou commençant par des mots à ignorer
+                if not line or any(line.startswith(word) for word in ignore_starts):
+                    if 'UGS' in line:
+                        # Extraction du code UGS
+                        match = re.search(code_pattern, line)
+                        if match:
+                            current_code = match.group(1).strip()
                     continue
 
                 # Cherche un nombre (quantité) et un prix dans la ligne
-                quantite_match = re.search(r'\b(\d+)\b', line)
-                prix_match = re.search(r'(\d+[,.]?\d*)\s*€', line)
+                quantite_match = re.search(r'\s(\d+)\s+(\d+[,.]?\d*)\s*€', line)
 
-                if quantite_match and prix_match:
+                if quantite_match:
                     try:
                         description = line[:quantite_match.start()].strip()
                         quantite = int(quantite_match.group(1))
-                        prix_unitaire = self.convert_to_float(prix_match.group(1))
+                        prix_unitaire = self.convert_to_float(quantite_match.group(2))
 
                         articles.append({
                             'reference': current_code,
@@ -195,7 +199,7 @@ class InvoiceExtractor:
             },
             'categorie_vente': "",
             'commentaire': "",
-            'statut_paiement': "",
+            'statut_paiement': "Payé" if invoice_type == 'internet' else "",  # Valeur par défaut pour internet
             'reglement': "carte bancaire" if invoice_type == 'internet' else "",  # Valeur par défaut pour internet
             'numero_client': "",
             'client_name': ""

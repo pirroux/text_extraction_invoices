@@ -19,7 +19,8 @@
         "total_ttc": 920.0,
         "total_ht": 766.67,
         "tva": 153.33,
-        "frais_expedition": 0.0
+        "frais_expedition": 0.0,
+        "type_expedition": null
       },
       "categorie_vente": "20.01.01",
       "commentaire": "planche avec répa donc remisée",
@@ -89,27 +90,19 @@
           "montant_ht": 0.0,
           "tva": 0.0,
           "remise": 0.0
-        },
-        {
-          "reference": "21370-1",
-          "description": "En cas de retard de paiement, indemnité forfaitaire légale pour frais de recouvrement :",
-          "quantite": 40,
-          "prix_unitaire": 40.0,
-          "montant_ht": 0.0,
-          "tva": 0.0,
-          "remise": 0.0
         }
       ],
-      "nombre_articles": 7,
+      "nombre_articles": 6,
       "TOTAL": {
         "total_ttc": 176.98,
-        "total_ht": 176.99,
+        "total_ht": 147.48,
         "tva": 29.5,
-        "frais_expedition": 0.0
+        "frais_expedition": 0.0,
+        "type_expedition": "Colissimo relais"
       },
       "categorie_vente": "",
       "commentaire": "",
-      "statut_paiement": "",
+      "statut_paiement": "Payé",
       "reglement": "carte bancaire",
       "numero_client": "",
       "client_name": "Gurvan Quéguineur",
@@ -155,6 +148,7 @@
         "total_ht": 12750.0,
         "tva": 1275.0,
         "frais_expedition": 0.0,
+        "type_expedition": null,
         "acompte": 6375.0
       },
       "categorie_vente": "",
@@ -165,6 +159,38 @@
       "client_name": "MHCS",
       "numero_facture": "FAC00000944",
       "date": "2025-02-11"
+    }
+  },
+  "facture-34229.pdf": {
+    "text": "Nomads Surfing\n22 rue André Maginot\n33700 Mérignac\nFrance\nSIRET : 83222453900011\nFACTURE\nyves COHUET N° de commande : 34229\n14 CHEMIN DE BRAULT Date de commande : 31 octobre 2024\n49250 SAINT MATHURIN LOIRE\nMéthode de Carte bancaire\nAUTION\npaiement :\nProduits Quantité Prix\nLeash recyclé made in France 6' 1 44,00 €\nUGS : 20114\nPoids : 0.235kg\nSous-total 44,00 €\nExpédition 4,40 € (TTC) via\nMondial Relay\nTotal 48,41 € (dont 8,07 €\nTVA)\nEn cas de retard de paiement, indemnité forfaitaire légale pour frais de recouvrement : 40,00 €\nEscompte en cas de paiement anticipé : aucun",
+    "data": {
+      "type": "internet",
+      "articles": [
+        {
+          "reference": "",
+          "description": "Leash recyclé made in France 6'",
+          "quantite": 1,
+          "prix_unitaire": 44.0,
+          "montant_ht": 0.0,
+          "tva": 0.0,
+          "remise": 0.0
+        }
+      ],
+      "nombre_articles": 1,
+      "TOTAL": {
+        "total_ttc": 48.41,
+        "total_ht": 40.339999999999996,
+        "tva": 8.07,
+        "frais_expedition": 4.4,
+        "type_expedition": "Mondial Relay"
+      },
+      "categorie_vente": "",
+      "commentaire": "",
+      "statut_paiement": "Payé",
+      "reglement": "carte bancaire",
+      "numero_client": "",
+      "client_name": "yves COHUET",
+      "numero_facture": "34229"
     }
   },
   "facture-34528.pdf": {
@@ -207,27 +233,19 @@
           "montant_ht": 0.0,
           "tva": 0.0,
           "remise": 0.0
-        },
-        {
-          "reference": "21287-1-1-1-1-1-5-5-5",
-          "description": "En cas de retard de paiement, indemnité forfaitaire légale pour frais de recouvrement :",
-          "quantite": 40,
-          "prix_unitaire": 40.0,
-          "montant_ht": 0.0,
-          "tva": 0.0,
-          "remise": 0.0
         }
       ],
-      "nombre_articles": 5,
+      "nombre_articles": 4,
       "TOTAL": {
         "total_ttc": 144.0,
-        "total_ht": 144.0,
+        "total_ht": 120.0,
         "tva": 24.0,
-        "frais_expedition": 0.0
+        "frais_expedition": 0.0,
+        "type_expedition": "Livraison gratuite"
       },
       "categorie_vente": "",
       "commentaire": "",
-      "statut_paiement": "",
+      "statut_paiement": "Payé",
       "reglement": "carte bancaire",
       "numero_client": "",
       "client_name": "fabrice pete",
