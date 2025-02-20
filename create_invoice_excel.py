@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 import json
 import re
+import pytz  # Pour gérer les fuseaux horaires
 
 def load_invoice_data():
     """Charge les données des factures depuis le fichier JSON"""
@@ -164,8 +165,19 @@ def main():
             print("Aucune donnée valide à exporter")
             return
 
-        # Générer le nom du fichier avec la date et l'heure au format YYMMDDminsec
-        timestamp = datetime.now().strftime('%y%m%d%M%S')
+        # Générer le nom du fichier avec la date et l'heure au format YYMMDDHHMMSS en GMT+1
+        paris_tz = pytz.timezone('Europe/Paris')
+        current_time = datetime.now(paris_tz)
+
+        # Format détaillé :
+        # %y : année sur 2 chiffres
+        # %m : mois sur 2 chiffres
+        # %d : jour sur 2 chiffres
+        # %H : heure sur 2 chiffres (format 24h)
+        # %M : minutes sur 2 chiffres
+        # %S : secondes sur 2 chiffres
+        timestamp = current_time.strftime('%y%m%d%H%M%S')
+
         filename = f'factures_auto_{timestamp}.xlsx'
 
         # Créer le fichier Excel avec formatage
