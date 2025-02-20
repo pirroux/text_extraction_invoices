@@ -4,6 +4,7 @@ import json
 import re
 import pytz  # Pour gérer les fuseaux horaires
 from pathlib import Path
+from openpyxl import Workbook
 
 def load_invoice_data():
     """Charge les données des factures depuis le fichier JSON"""
@@ -18,100 +19,127 @@ def load_invoice_data():
         return {}
 
 def create_invoice_dataframe(invoices_data):
-    """Crée un DataFrame avec les headers spécifiés"""
-    # Définir tous les headers possibles
-    all_headers = ['Type-facture', 'n°ordre', 'saisie', 'Syst', 'N° Syst.', 'comptable',
-                  'Type_Vente', 'Réseau_Vente', 'Client', 'Typologie', 'Banque créditée',
-                  'Date commande', 'Date facture', 'Date expédition', 'Commentaire',
-                  'date1', 'acompte1', 'date2', 'acompte2', 'Date solde', 'solde',
-                  'contrôle paiement', 'reste dû', 'AVO', 'tva', 'ttc', 'Credit TTC',
-                  'Credit HT', 'remise', 'TVA Collectee', 'quantité']
+    """Crée un DataFrame à partir des données des factures"""
+    # Définir les headers dans le même ordre exact que create_excel_from_data
+    headers = [
+        'Type-facture', 'n°ordre', 'saisie', 'Syst', 'N° Syst.', 'comptable', 'Type_facture',
+        'Type_Vente', 'Réseau_Vente', 'Client', 'Typologie', 'Banque créditée',
+        'Date commande', 'Date facture', 'Date expédition', 'Commentaire',
+        'date1', 'acompte1', 'date2', 'acompte2', 'Date solde', 'solde',
+        'contrôle paiement', 'reste dû', 'AVO', 'tva', 'ttc', 'Credit TTC',
+        'Credit HT', 'remise', 'TVA Collectee', 'quantité'
+    ]
 
-    # Ajouter les headers pour les 20 articles
+    # Ajouter les headers pour les articles
     for i in range(1, 21):
-        all_headers.extend([f'supfam{i}', f'fam{i}', f'ref{i}', f'q{i}', f'prix{i}',
-                          f'r€{i}', f'ht{i}', f'tva€{i}'])
+        headers.extend([f'supfam{i}', f'fam{i}', f'ref{i}', f'q{i}', f'prix{i}',
+                      f'r€{i}', f'ht{i}', f'tva€{i}'])
 
     rows = []
     for filename, invoice in invoices_data.items():
         try:
-            if 'error' in invoice:
-                continue
+            data = invoice['data']
+            row = {col: '' for col in headers}  # Initialiser toutes les colonnes avec des valeurs vides
 
-            data = invoice.get('data', {})
-            if not data:
-                continue
-
-            # Création d'une ligne de base avec tous les headers vides
-            row = dict.fromkeys(all_headers, '')
-
-            # Extraire et formater la date selon le type de facture
+            # Extraire la date
             date = data.get('date', '')
             if data.get('type') == 'internet' and 'text' in invoice:
-                # Pour les factures internet, chercher "Date de commande" dans le texte
                 date_match = re.search(r'Date de commande\s*:\s*(\d{1,2}\s*\w+\s*\d{4})', invoice['text'])
                 if date_match:
-                    try:
-                        # Convertir la date française en format YYYY-MM-DD
-                        date_fr = date_match.group(1).strip()
-                        # Remplacer les mois français par leur numéro
-                        mois_fr = {
-                            'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
-                            'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
-                            'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
-                        }
-                        for mois, num in mois_fr.items():
-                            date_fr = date_fr.replace(mois, num)
+                    date_fr = date_match.group(1).strip()
+                    mois_fr = {
+                        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+                        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+                        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+                    }
+                    for mois, num in mois_fr.items():
+                        date_fr = date_fr.replace(mois, num)
+                    jour, mois, annee = re.match(r'(\d{1,2})\s*(\d{2})\s*(\d{4})', date_fr).groups()
+                    date = f"{annee}-{mois}-{jour.zfill(2)}"
 
-                        # Parser la date
-                        jour, mois, annee = re.match(r'(\d{1,2})\s*(\d{2})\s*(\d{4})', date_fr).groups()
-                        date = f"{annee}-{mois}-{jour.zfill(2)}"
-                    except Exception as e:
-                        print(f"Erreur lors du parsing de la date pour {filename}: {str(e)}")
+            # Extraire les informations d'acompte
+            acompte_match = re.search(r'Echéance\(s\)\s*Acompte\s*de\s*(\d+[\s\d]*,\d+)\s*€\s*au\s*(\d{2}/\d{2}/\d{4})', invoice['text'])
+            if acompte_match:
+                montant_acompte = float(acompte_match.group(1).replace(' ', '').replace(',', '.'))
+                date_acompte = acompte_match.group(2)
+                jour, mois, annee = date_acompte.split('/')
+                date_acompte_iso = f"{annee}-{mois}-{jour}"
+            else:
+                montant_acompte = ''
+                date_acompte_iso = ''
 
-            # Extraire le numéro de commande et les 5 derniers chiffres
-            numero_facture = data.get('numero_facture', '')
-            last_5_digits = numero_facture[-5:] if len(numero_facture) >= 5 else numero_facture
+            # Calculer le taux de TVA
+            total_ht = data['TOTAL']['total_ht']
+            total_ttc = data['TOTAL']['total_ttc']
+            if data.get('type') == 'meg':
+                taux_tva = f"{data['articles'][0]['tva']:.2f}%".replace('.', ',') if data['articles'] else ''
+            else:
+                if total_ht and total_ht != 0:
+                    taux_tva = f"{((total_ttc / total_ht) - 1) * 100:.2f}%".replace('.', ',')
+                else:
+                    taux_tva = ''
 
-            # Extraire les premiers XX.XX de categorie_vente
-            categorie_vente = data.get('categorie_vente', '')
-            type_vente_match = re.match(r'\d{2}\.\d{2}', categorie_vente)
-            type_vente = type_vente_match.group(0) if type_vente_match else categorie_vente
+            # Remplir les données dans l'ordre exact des colonnes
+            row['Type-facture'] = " "
+            row['n°ordre'] = " "
+            row['saisie'] = ''
+            row['Syst'] = 'MEG' if data.get('type') == 'meg' else 'Internet'
+            row['N° Syst.'] = data.get('numero_facture', '')
+            row['comptable'] = ''
+            row['Type_facture'] = ''
+            row['Type_Vente'] = data.get('Type_Vente', '')
+            row['Réseau_Vente'] = data.get('Réseau_Vente', '')
+            row['Client'] = data.get('client_name', '')
+            row['Typologie'] = ''
+            row['Banque créditée'] = ''
+            row['Date commande'] = date
+            row['Date facture'] = date
+            row['Date expédition'] = ''
+            row['Commentaire'] = data.get('commentaire', '')
+            row['date1'] = date_acompte_iso if 'date_acompte_iso' in locals() else ''
+            row['acompte1'] = montant_acompte if 'montant_acompte' in locals() else ''
+            row['date2'] = ''
+            row['acompte2'] = ''
+            row['Date solde'] = ''
+            row['solde'] = data.get('TOTAL', {}).get('total_ttc', 0)
+            row['contrôle paiement'] = data.get('statut_paiement', '')
+            row['reste dû'] = data.get('TOTAL', {}).get('total_ttc', 0) - data.get('TOTAL', {}).get('total_ttc', 0)
+            row['AVO'] = ''
+            row['tva'] = taux_tva
+            row['ttc'] = ''
+            row['Credit TTC'] = data.get('TOTAL', {}).get('total_ttc', 0)
+            row['Credit HT'] = data.get('TOTAL', {}).get('total_ht', 0)
+            row['remise'] = data.get('TOTAL', {}).get('remise', '')
+            row['TVA Collectee'] = data.get('TOTAL', {}).get('tva', 0)
+            row['quantité'] = data.get('nombre_articles', 0)
 
-            # Remplir les données disponibles
-            row.update({
-                'Type-facture': numero_facture,
-                'n°ordre': last_5_digits,
-                'Type_Vente': data.get('Type_Vente', ''),
-                'Réseau_Vente': data.get('Réseau_Vente', ''),
-                'Client': data.get('client_name', ''),
-                'Date commande': date,
-                'Date facture': date,
-                'Commentaire': data.get('commentaire', ''),
-                'acompte1': data.get('TOTAL', {}).get('acompte', ''),
-                'solde': data.get('TOTAL', {}).get('total_ttc', 0),
-                'contrôle paiement': data.get('statut_paiement', ''),
-                'Credit TTC': data.get('TOTAL', {}).get('total_ttc', 0),
-                'Credit HT': data.get('TOTAL', {}).get('total_ht', 0),
-                'TVA Collectee': data.get('TOTAL', {}).get('tva', 0),
-                'quantité': data.get('nombre_articles', 0),
-                'remise': data.get('TOTAL', {}).get('remise', '')
-            })
-
-            # Ajouter les informations pour chaque article
+            # Remplir les articles
             articles = data.get('articles', [])
             for i, article in enumerate(articles, 1):
-                if i > 20:  # Limite de 20 articles
+                if i > 20:
                     break
 
-                row.update({
-                    f'ref{i}': article.get('reference', ''),
-                    f'q{i}': article.get('quantite', ''),
-                    f'prix{i}': article.get('prix_unitaire', ''),
-                    f'ht{i}': article.get('montant_ht', ''),
-                    f'tva€{i}': article.get('tva', ''),  # TVA directe de l'article
-                    f'r€{i}': article.get('remise', ''),  # Remise directe de l'article
-                })
+                # Calculs des montants
+                if data.get('type') == 'meg':
+                    prix_ht = article.get('prix_unitaire', 0)
+                    montant_ht = article.get('montant_ht', 0)
+                    taux_tva_decimal = article.get('tva', 0) / 100
+                    tva_euros = montant_ht * taux_tva_decimal
+                else:
+                    prix_ttc = article.get('prix_unitaire', 0)
+                    taux_tva = ((total_ttc / total_ht) - 1) if total_ht > 0 else 0
+                    prix_ht = prix_ttc / (1 + taux_tva)
+                    montant_ht = prix_ht * article.get('quantite', 1)
+                    tva_euros = montant_ht * taux_tva
+
+                row[f'supfam{i}'] = ''
+                row[f'fam{i}'] = ''
+                row[f'ref{i}'] = article.get('reference', '')
+                row[f'q{i}'] = article.get('quantite', '')
+                row[f'prix{i}'] = round(prix_ht, 2)
+                row[f'r€{i}'] = article.get('remise', '')
+                row[f'ht{i}'] = round(montant_ht, 2)
+                row[f'tva€{i}'] = round(tva_euros, 2)
 
             rows.append(row)
 
@@ -119,8 +147,9 @@ def create_invoice_dataframe(invoices_data):
             print(f"Erreur lors du traitement de {filename}: {str(e)}")
             continue
 
-    # Créer le DataFrame avec les colonnes dans le bon ordre
-    return pd.DataFrame(rows, columns=all_headers)
+    # Créer le DataFrame en respectant l'ordre exact des colonnes
+    df = pd.DataFrame(rows)
+    return df[headers]  # Forcer l'ordre exact des colonnes
 
 def format_excel(writer, df):
     """Applique le formatage au fichier Excel"""
@@ -152,23 +181,160 @@ def format_excel(writer, df):
     except Exception as e:
         print(f"Erreur lors du formatage Excel: {str(e)}")
 
-def create_excel_from_data(invoice_data):
-    """Crée un fichier Excel à partir des données et retourne son chemin"""
-    # Créer le DataFrame
-    df = create_invoice_dataframe(invoice_data)
+def create_excel_from_data(invoice_data: dict) -> Path:
+    """Crée un fichier Excel à partir des données des factures"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Factures"
 
-    # Générer le nom du fichier
-    paris_tz = pytz.timezone('Europe/Paris')
-    current_time = datetime.now(paris_tz)
-    timestamp = current_time.strftime('%y%m%d%H%M%S')
-    filename = f'factures_auto_{timestamp}.xlsx'
+    # Utiliser exactement les mêmes headers que create_invoice_dataframe
+    headers = ['Type-facture', 'n°ordre', 'saisie', 'Syst', 'N° Syst.', 'comptable', 'Type_facture',
+              'Type_Vente', 'Réseau_Vente', 'Client', 'Typologie', 'Banque créditée',
+              'Date commande', 'Date facture', 'Date expédition', 'Commentaire',
+              'date1', 'acompte1', 'date2', 'acompte2', 'Date solde', 'solde',
+              'contrôle paiement', 'reste dû', 'AVO', 'tva', 'ttc', 'Credit TTC',
+              'Credit HT', 'remise', 'TVA Collectee', 'quantité']
 
-    # Créer le fichier Excel
-    with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='Factures', index=False)
-        format_excel(writer, df)
+    # Ajouter les headers pour les 20 articles
+    for i in range(1, 21):
+        headers.extend([f'supfam{i}', f'fam{i}', f'ref{i}', f'q{i}', f'prix{i}',
+                      f'r€{i}', f'ht{i}', f'tva€{i}'])
 
-    return Path(filename)
+    # Écrire les en-têtes
+    for col, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col, value=header)
+
+    # Remplir les données
+    row = 2
+    for filename, invoice in invoice_data.items():
+        try:
+            data = invoice['data']
+
+            # Extraire la date de commande pour les factures internet
+            date = data.get('date', '')
+            if data.get('type') == 'internet' and 'text' in invoice:
+                date_match = re.search(r'Date de commande\s*:\s*(\d{1,2}\s*\w+\s*\d{4})', invoice['text'])
+                if date_match:
+                    date_fr = date_match.group(1).strip()
+                    mois_fr = {
+                        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+                        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+                        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+                    }
+                    for mois, num in mois_fr.items():
+                        date_fr = date_fr.replace(mois, num)
+                    jour, mois, annee = re.match(r'(\d{1,2})\s*(\d{2})\s*(\d{4})', date_fr).groups()
+                    date = f"{annee}-{mois}-{jour.zfill(2)}"
+
+            # Extraire les informations d'acompte
+            acompte_match = re.search(r'Echéance\(s\)\s*Acompte\s*de\s*(\d+[\s\d]*,\d+)\s*€\s*au\s*(\d{2}/\d{2}/\d{4})', invoice['text'])
+            if acompte_match:
+                montant_acompte = float(acompte_match.group(1).replace(' ', '').replace(',', '.'))
+                date_acompte = acompte_match.group(2)
+                jour, mois, annee = date_acompte.split('/')
+                date_acompte_iso = f"{annee}-{mois}-{jour}"
+            else:
+                montant_acompte = ''
+                date_acompte_iso = ''
+
+            # Calculer le taux de TVA
+            total_ht = data['TOTAL']['total_ht']
+            total_ttc = data['TOTAL']['total_ttc']
+            if data.get('type') == 'meg':
+                taux_tva = f"{data['articles'][0]['tva']:.2f}%".replace('.', ',') if data['articles'] else ''
+            else:
+                if total_ht and total_ht != 0:
+                    taux_tva = f"{((total_ttc / total_ht) - 1) * 100:.2f}%".replace('.', ',')
+                else:
+                    taux_tva = ''
+
+            # Remplir les données de base
+            ws.cell(row=row, column=1, value=" ")  # Type-facture
+            ws.cell(row=row, column=2, value=" ")  # n°ordre
+            ws.cell(row=row, column=3, value='')  # saisie
+            ws.cell(row=row, column=4, value='MEG' if data.get('type') == 'meg' else 'Internet')  # Syst
+            ws.cell(row=row, column=5, value=data.get('numero_facture', ''))  # N° Syst.
+            ws.cell(row=row, column=6, value='')  # comptable
+            ws.cell(row=row, column=7, value='')  # Type_facture
+            ws.cell(row=row, column=8, value=data.get('Type_Vente', ''))  # Type_Vente
+            ws.cell(row=row, column=9, value=data.get('Réseau_Vente', ''))  # Réseau_Vente
+            ws.cell(row=row, column=10, value=data.get('client_name', ''))  # Client
+            ws.cell(row=row, column=11, value='')  # Typologie
+            ws.cell(row=row, column=12, value='')  # Banque créditée
+            ws.cell(row=row, column=13, value=date)  # Date commande
+            ws.cell(row=row, column=14, value=date)  # Date facture
+            ws.cell(row=row, column=15, value='')  # Date expédition
+            ws.cell(row=row, column=16, value=data.get('commentaire', ''))  # Commentaire
+            ws.cell(row=row, column=17, value=date_acompte_iso)  # date1
+            ws.cell(row=row, column=18, value=montant_acompte)  # acompte1
+            ws.cell(row=row, column=19, value='')  # date2
+            ws.cell(row=row, column=20, value='')  # acompte2
+            ws.cell(row=row, column=21, value='')  # Date solde
+            ws.cell(row=row, column=22, value=data.get('TOTAL', {}).get('total_ttc', 0))  # solde
+            ws.cell(row=row, column=23, value=data.get('statut_paiement', ''))  # contrôle paiement
+            ws.cell(row=row, column=24, value=data.get('TOTAL', {}).get('total_ttc', 0) - data.get('TOTAL', {}).get('total_ttc', 0))  # reste dû
+            ws.cell(row=row, column=25, value='')  # AVO
+            ws.cell(row=row, column=26, value=taux_tva)  # tva
+            ws.cell(row=row, column=27, value='')  # ttc
+            ws.cell(row=row, column=28, value=data.get('TOTAL', {}).get('total_ttc', 0))  # Credit TTC
+            ws.cell(row=row, column=29, value=data.get('TOTAL', {}).get('total_ht', 0))  # Credit HT
+            ws.cell(row=row, column=30, value=data.get('TOTAL', {}).get('remise', ''))  # remise
+            ws.cell(row=row, column=31, value=data.get('TOTAL', {}).get('tva', 0))  # TVA Collectee
+            ws.cell(row=row, column=32, value=data.get('nombre_articles', 0))  # quantité
+
+            # Remplir les données des articles
+            col_offset = 32  # Décalage après les colonnes de base
+            articles = data.get('articles', [])
+            for i, article in enumerate(articles, 1):
+                if i > 20:  # Limite de 20 articles
+                    break
+
+                if data.get('type') == 'meg':
+                    prix_ht = article.get('prix_unitaire', 0)
+                    montant_ht = article.get('montant_ht', 0)
+                    taux_tva_decimal = article.get('tva', 0) / 100
+                    tva_euros = montant_ht * taux_tva_decimal
+                else:
+                    prix_ttc = article.get('prix_unitaire', 0)
+                    taux_tva = ((total_ttc / total_ht) - 1) if total_ht > 0 else 0
+                    prix_ht = prix_ttc / (1 + taux_tva)
+                    montant_ht = prix_ht * article.get('quantite', 1)
+                    tva_euros = montant_ht * taux_tva
+
+                base_col = col_offset + (i-1)*8
+                ws.cell(row=row, column=base_col+1, value='')  # supfam
+                ws.cell(row=row, column=base_col+2, value='')  # fam
+                ws.cell(row=row, column=base_col+3, value=article.get('reference', ''))  # ref
+                ws.cell(row=row, column=base_col+4, value=article.get('quantite', ''))  # q
+                ws.cell(row=row, column=base_col+5, value=round(prix_ht, 2))  # prix
+                ws.cell(row=row, column=base_col+6, value=article.get('remise', ''))  # r€
+                ws.cell(row=row, column=base_col+7, value=round(montant_ht, 2))  # ht
+                ws.cell(row=row, column=base_col+8, value=round(tva_euros, 2))  # tva€
+
+            row += 1
+
+        except Exception as e:
+            print(f"Erreur lors du traitement de {filename}: {str(e)}")
+            continue
+
+    # Ajuster la largeur des colonnes
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+    # Sauvegarder le fichier
+    excel_path = Path('factures_recap.xlsx')
+    wb.save(str(excel_path))
+
+    return excel_path
 
 def main():
     try:

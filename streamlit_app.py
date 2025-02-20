@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import base64
 import os
+from create_invoice_excel import create_excel_from_data, load_invoice_data
 
 # Configuration de l'API endpoint
 API_URL = "http://localhost:8000/analyze_pdfs/"
@@ -89,3 +90,22 @@ if uploaded_files:
             st.error("⏳ Le serveur met trop de temps à répondre. Réessayez plus tard.")
         except Exception as e:
             st.error(f"🚨 Une erreur est survenue : {str(e)}")
+
+def process_and_create_excel():
+    """Fonction simple qui utilise create_excel_from_data"""
+    try:
+        # Charger les données
+        invoices_data = load_invoice_data()
+
+        # Utiliser directement la fonction de create_invoice_excel.py
+        excel_path = create_excel_from_data(invoices_data)
+
+        # Lire le fichier Excel créé
+        with open(excel_path, 'rb') as f:
+            excel_data = f.read()
+
+        return excel_data, excel_path.name
+
+    except Exception as e:
+        st.error(f"Erreur lors de la création de l'Excel : {str(e)}")
+        return None, None
