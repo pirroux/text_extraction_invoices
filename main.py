@@ -1,7 +1,12 @@
 from pathlib import Path
 import json
 from pdf_extractor import extract_text_from_pdf
+from data_extractor import extract_data
+from create_invoice_excel import create_excel_from_data
 from billing_extractor import InvoiceExtractor
+import logging
+
+logger = logging.getLogger(__name__)
 
 def load_patterns() -> dict:
     """Charge les patterns de reconnaissance de texte"""
@@ -15,48 +20,76 @@ def load_patterns() -> dict:
         "article_pattern": r"ART(\d+)\s*-([^\n]+?)\s+(\d+,\d+)\s+(\d+,\d+)\s*€\s*(\d+,\d+)%\s*(\d+,\d+)\s*€"
     }
 
-def main():
-    # Initialise les chemins
-    pdf_folder = Path("data_factures/facturesv2")
-    output_file = Path("factures.json")
+def process_pdfs(pdf_paths: list[Path]) -> Path:
+    """Process multiple PDF files and create a single Excel file"""
+    try:
+        # Dictionary to store all invoice data
+        all_invoices = {}
 
-    # Crée l'extracteur de factures (plus besoin de credentials)
-    invoice_extractor = InvoiceExtractor()
+        # Create invoice extractor
+        invoice_extractor = InvoiceExtractor()
 
-    # Dictionnaire pour stocker toutes les factures
-    all_invoices = {}
+        # Process each PDF
+        for pdf_path in pdf_paths:
+            try:
+                logger.info(f"Processing {pdf_path.name}...")
 
-    # Traite chaque PDF
-    for pdf_path in pdf_folder.glob("*.pdf"):
-        try:
-            print(f"\nTraitement de {pdf_path.name}...")
+                # Extract text from PDF
+                extracted = extract_text_from_pdf(str(pdf_path))
+                if not extracted:
+                    logger.warning(f"No text extracted from {pdf_path.name}")
+                    continue
 
-            # Extrait le texte avec pdfplumber
-            extracted = extract_text_from_pdf(str(pdf_path))
-            if not extracted:
-                raise ValueError("Pas de texte extrait")
+                # Extract structured data using the invoice extractor
+                data = invoice_extractor.extract_invoice_data(extracted['text'])
 
-            # Utilise le nouvel extracteur pour obtenir les données structurées
-            data = invoice_extractor.extract_invoice_data(extracted['text'])
+                # Add to main dictionary with the same structure as before
+                all_invoices[pdf_path.name] = {
+                    'text': extracted['text'],
+                    'data': data['invoice_data']
+                }
 
-            # Ajoute au dictionnaire principal
-            all_invoices[pdf_path.name] = {
-                'text': extracted['text'],
-                'data': data['invoice_data']  # Notez le changement ici
-            }
+                logger.info(f"Successfully processed {pdf_path.name}")
 
-            print(f"✓ {pdf_path.name} traité avec succès")
+            except Exception as e:
+                logger.error(f"Error processing {pdf_path.name}: {str(e)}")
+                all_invoices[pdf_path.name] = {
+                    'error': str(e)
+                }
 
-        except Exception as e:
-            print(f"✗ Erreur sur {pdf_path.name}: {str(e)}")
-            all_invoices[pdf_path.name] = {
-                'error': str(e)
-            }
+        if not all_invoices:
+            raise ValueError("No invoices were successfully processed")
 
-    # Sauvegarde toutes les factures dans un seul fichier JSON
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(all_invoices, f, ensure_ascii=False, indent=2)
-    print(f"\nToutes les factures ont été sauvegardées dans {output_file}")
+        # Save to JSON for debugging (optional)
+        json_path = Path("factures.json")
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(all_invoices, f, ensure_ascii=False, indent=2)
+
+        # Create Excel file from the processed data
+        excel_path = create_excel_from_data(all_invoices)
+
+        if not excel_path.exists():
+            raise FileNotFoundError("Excel file was not created")
+
+        return excel_path
+
+    except Exception as e:
+        logger.error(f"Error in process_pdfs: {str(e)}")
+        raise
+
+def process_pdf(pdf_path: Path) -> Path:
+    """Process a single PDF file - wrapper around process_pdfs"""
+    return process_pdfs([pdf_path])
 
 if __name__ == "__main__":
-    main()
+    # Test processing
+    pdf_folder = Path("data_factures")
+    pdfs = list(pdf_folder.glob("*.pdf"))
+    if pdfs:
+        try:
+            excel_path = process_pdfs(pdfs)
+            print(f"Excel file created at: {excel_path}")
+        except Exception as e:
+            print(f"Error: {str(e)}")
+    else:
+        print("No PDF files found in data_factures folder")

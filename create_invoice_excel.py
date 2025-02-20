@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import re
 import pytz  # Pour gérer les fuseaux horaires
+from pathlib import Path
 
 def load_invoice_data():
     """Charge les données des factures depuis le fichier JSON"""
@@ -150,6 +151,24 @@ def format_excel(writer, df):
 
     except Exception as e:
         print(f"Erreur lors du formatage Excel: {str(e)}")
+
+def create_excel_from_data(invoice_data):
+    """Crée un fichier Excel à partir des données et retourne son chemin"""
+    # Créer le DataFrame
+    df = create_invoice_dataframe(invoice_data)
+
+    # Générer le nom du fichier
+    paris_tz = pytz.timezone('Europe/Paris')
+    current_time = datetime.now(paris_tz)
+    timestamp = current_time.strftime('%y%m%d%H%M%S')
+    filename = f'factures_auto_{timestamp}.xlsx'
+
+    # Créer le fichier Excel
+    with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Factures', index=False)
+        format_excel(writer, df)
+
+    return Path(filename)
 
 def main():
     try:

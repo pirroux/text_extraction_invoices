@@ -6,6 +6,10 @@ data_factures/*.pdf
 *.png
 *.PNG
 
+# Temporary files
+temp_files/
+factures_auto_*.xlsx
+
 # Python
 __pycache__/
 *.py[cod]
