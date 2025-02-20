@@ -20,9 +20,11 @@
         "total_ht": 766.67,
         "tva": 153.33,
         "frais_expedition": 0.0,
-        "type_expedition": null
+        "type_expedition": null,
+        "remise": ""
       },
-      "categorie_vente": "20.01.01",
+      "Réseau_Vente": "20.01.01",
+      "Type_Vente": "20.01",
       "commentaire": "planche avec répa donc remisée",
       "statut_paiement": "A payer",
       "reglement": "cheque",
@@ -98,9 +100,11 @@
         "total_ht": 147.48,
         "tva": 29.5,
         "frais_expedition": 0.0,
-        "type_expedition": "Colissimo relais"
+        "type_expedition": "Colissimo relais",
+        "remise": ""
       },
-      "categorie_vente": "",
+      "Réseau_Vente": "",
+      "Type_Vente": "",
       "commentaire": "",
       "statut_paiement": "Payé",
       "reglement": "carte bancaire",
@@ -149,9 +153,11 @@
         "tva": 1275.0,
         "frais_expedition": 0.0,
         "type_expedition": null,
+        "remise": "",
         "acompte": 6375.0
       },
-      "categorie_vente": "",
+      "Réseau_Vente": "",
+      "Type_Vente": "20.02",
       "commentaire": "",
       "statut_paiement": "",
       "reglement": "cheque",
@@ -182,9 +188,11 @@
         "total_ht": 40.339999999999996,
         "tva": 8.07,
         "frais_expedition": 4.4,
-        "type_expedition": "Mondial Relay"
+        "type_expedition": "Mondial Relay",
+        "remise": ""
       },
-      "categorie_vente": "",
+      "Réseau_Vente": "",
+      "Type_Vente": "",
       "commentaire": "",
       "statut_paiement": "Payé",
       "reglement": "carte bancaire",
@@ -241,9 +249,11 @@
         "total_ht": 120.0,
         "tva": 24.0,
         "frais_expedition": 0.0,
-        "type_expedition": "Livraison gratuite"
+        "type_expedition": "Livraison gratuite",
+        "remise": ""
       },
-      "categorie_vente": "",
+      "Réseau_Vente": "",
+      "Type_Vente": "",
       "commentaire": "",
       "statut_paiement": "Payé",
       "reglement": "carte bancaire",

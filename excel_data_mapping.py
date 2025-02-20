@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from pdf_extractor import extract_text_from_pdf
 from data_extractor import extract_data
+import pandas as pd
 
 def load_patterns() -> dict:
     """Charge les patterns de reconnaissance"""

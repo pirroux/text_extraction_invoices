@@ -18,7 +18,8 @@ class InvoiceExtractor:
             'total_ht': 0.0,
             'tva': 0.0,
             'frais_expedition': 0.0,
-            'type_expedition': "" if invoice_type == 'internet' else None  # Nouveau champ pour internet
+            'type_expedition': "" if invoice_type == 'internet' else None,
+            'remise': ''  # Ajout du champ remise
         }
 
         if invoice_type == 'internet':
@@ -72,6 +73,12 @@ class InvoiceExtractor:
             acompte_match = re.search(acompte_pattern, text)
             if acompte_match:
                 amounts['acompte'] = self.convert_to_float(acompte_match.group(1))
+
+        # Recherche d'une remise totale
+        remise_pattern = r'Remise\s+(?:totale|globale)?\s*:?\s*(\d+[.,]?\d*)\s*[€%]'
+        remise_match = re.search(remise_pattern, text, re.IGNORECASE)
+        if remise_match:
+            amounts['remise'] = self.convert_to_float(remise_match.group(1))
 
         return amounts
 
@@ -197,10 +204,11 @@ class InvoiceExtractor:
                 'tva': 0.0,
                 'frais_expedition': 0.0
             },
-            'categorie_vente': "",
+            'Réseau_Vente': "",  # Renommé de categorie_vente à Réseau_Vente
+            'Type_Vente': "",  # Renommé de type_vente à Type_Vente
             'commentaire': "",
-            'statut_paiement': "Payé" if invoice_type == 'internet' else "",  # Valeur par défaut pour internet
-            'reglement': "carte bancaire" if invoice_type == 'internet' else "",  # Valeur par défaut pour internet
+            'statut_paiement': "Payé" if invoice_type == 'internet' else "",
+            'reglement': "carte bancaire" if invoice_type == 'internet' else "",
             'numero_client': "",
             'client_name': ""
         }
@@ -220,22 +228,28 @@ class InvoiceExtractor:
                 r'FACTURE\s+([^\n]+?)\s+N° de commande' if invoice_type == 'internet'
                 else r'(?:N°\s*client\s*:[^\n]+\n)(?:(?:Monsieur|Madame|M\.|Mme\.)\s*)?([A-Za-zÀ-ÿ\s\-\']+?)(?:\n|$)'
             ),
-            'categorie_vente': r'Catégorie de vente\s*:\s*([^\n]+)',
+            'Réseau_Vente': r'20\.(?:0[1-9]|10)\.\d{2}',  # Pattern pour 20.XX.XX complet
+            'Type_Vente': r'20\.(?:0[1-9]|10)',  # Pattern pour 20.XX uniquement
             'commentaire': r'Commentaire\s*:\s*([^\n]+)',
             'statut_paiement': r'Statut paiement\s*:\s*([^\n]+)',
-            'reglement': r'Règlement\s*:?\s*([^\n]+)' if invoice_type == 'meg' else None  # Pattern uniquement pour MEG
+            'reglement': r'Règlement\s*:?\s*([^\n]+)' if invoice_type == 'meg' else None
         }
 
         # Extraction des informations de base
         for key, pattern in patterns.items():
-            if pattern:  # Vérifie si le pattern existe (pour éviter d'extraire le règlement des factures internet)
-                match = re.search(pattern, text, re.IGNORECASE)
-                if match:
-                    value = match.group(1).strip()
-                    # Normalisation du règlement uniquement pour MEG
-                    if key == 'reglement' and invoice_type == 'meg' and ('cheque' in value.lower() or 'chèque' in value.lower()):
-                        value = 'cheque'
-                    data[key] = value
+            if pattern:
+                if key in ['Réseau_Vente', 'Type_Vente']:
+                    # Recherche dans tout le texte
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        data[key] = match.group(0)
+                else:
+                    match = re.search(pattern, text, re.IGNORECASE)
+                    if match:
+                        value = match.group(1).strip()
+                        if key == 'reglement' and invoice_type == 'meg' and ('cheque' in value.lower() or 'chèque' in value.lower()):
+                            value = 'cheque'
+                        data[key] = value
 
         # Extraction des articles
         articles = self.extract_articles(text, invoice_type)
