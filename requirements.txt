@@ -4,7 +4,6 @@ xlsxwriter
 python-dateutil
 numpy
 pytz
-# autres dépendances que vous utilisez...
 fastapi
 python-multipart
 uvicorn

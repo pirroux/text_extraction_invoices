@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ## 💻 Utilisation
 
-### Via l'interface Streamlit
+### Via l'interface Streamlit (Recommandé)
 
 1. Démarrer l'API FastAPI :
 ```bash

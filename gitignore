@@ -1,0 +1,21 @@
+# Streamlit
+.streamlit/
+*.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+nomads_facturation/
+
+# Data
+data/
+*.pdf
+*.xlsx
+*.json
+
+# IDE
+.vscode/
+.idea/

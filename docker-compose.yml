@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nomads-facturation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nomads-facturation:python3.12
+    ports:
+      - "8000:8000"  # FastAPI
+      - "8501:8501"  # Streamlit
+    volumes:
+      - ./data:/app/data
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - PYTHON_VERSION=3.12
