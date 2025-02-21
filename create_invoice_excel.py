@@ -18,6 +18,16 @@ def load_invoice_data():
         print("Erreur: Le fichier factures.json n'est pas un JSON valide")
         return {}
 
+def format_date(date_str: str) -> str:
+    """Convertit une date YYYY-MM-DD en MM/DD/YYYY"""
+    if not date_str:
+        return ''
+    try:
+        year, month, day = date_str.split('-')
+        return f"{month}/{day}/{year}"
+    except ValueError:
+        return date_str
+
 def create_invoice_dataframe(invoices_data):
     """Crée un DataFrame à partir des données des factures"""
     # Définir les headers dans le même ordre exact que create_excel_from_data
@@ -68,9 +78,14 @@ def create_invoice_dataframe(invoices_data):
                 montant_acompte = ''
                 date_acompte_iso = ''
 
-            # Calculer le taux de TVA
+            # Calculer le taux de TVA et le total HT avec remise
             total_ht = data['TOTAL']['total_ht']
+            remise = data['TOTAL'].get('remise', 0)
+            # Appliquer la remise si elle existe
+            if remise:
+                total_ht = total_ht - float(remise)
             total_ttc = data['TOTAL']['total_ttc']
+
             if data.get('type') == 'meg':
                 taux_tva = f"{data['articles'][0]['tva']:.2f}%".replace('.', ',') if data['articles'] else ''
             else:
@@ -92,11 +107,11 @@ def create_invoice_dataframe(invoices_data):
             row['Client'] = data.get('client_name', '')
             row['Typologie'] = ''
             row['Banque créditée'] = ''
-            row['Date commande'] = data.get('date_commande', '')
-            row['Date facture'] = data.get('date_facture', '')
+            row['Date commande'] = format_date(data.get('date_commande', ''))
+            row['Date facture'] = format_date(data.get('date_facture', ''))
             row['Date expédition'] = ''
             row['Commentaire'] = data.get('commentaire', '')
-            row['date1'] = date_acompte_iso if 'date_acompte_iso' in locals() else ''
+            row['date1'] = format_date(date_acompte_iso if 'date_acompte_iso' in locals() else '')
             row['acompte1'] = montant_acompte if 'montant_acompte' in locals() else ''
             row['date2'] = ''
             row['acompte2'] = ''
@@ -108,8 +123,8 @@ def create_invoice_dataframe(invoices_data):
             row['tva'] = taux_tva
             row['ttc'] = ''
             row['Credit TTC'] = data.get('TOTAL', {}).get('total_ttc', 0)
-            row['Credit HT'] = data.get('TOTAL', {}).get('total_ht', 0)
-            row['remise'] = data.get('TOTAL', {}).get('remise', '')
+            row['Credit HT'] = total_ht  # Utiliser le total HT avec remise
+            row['remise'] = remise
             row['TVA Collectee'] = data.get('TOTAL', {}).get('tva', 0)
             row['quantité'] = data.get('nombre_articles', 0)
 
@@ -223,9 +238,14 @@ def create_excel_from_data(invoice_data: dict) -> Path:
                 montant_acompte = ''
                 date_acompte_iso = ''
 
-            # Calculer le taux de TVA
+            # Calculer le taux de TVA et le total HT avec remise
             total_ht = data['TOTAL']['total_ht']
+            remise = data['TOTAL'].get('remise', 0)
+            # Appliquer la remise si elle existe
+            if remise:
+                total_ht = total_ht - float(remise)
             total_ttc = data['TOTAL']['total_ttc']
+
             if data.get('type') == 'meg':
                 taux_tva = f"{data['articles'][0]['tva']:.2f}%".replace('.', ',') if data['articles'] else ''
             else:
@@ -247,11 +267,11 @@ def create_excel_from_data(invoice_data: dict) -> Path:
             ws.cell(row=row, column=10, value=data.get('client_name', ''))  # Client
             ws.cell(row=row, column=11, value='')  # Typologie
             ws.cell(row=row, column=12, value='')  # Banque créditée
-            ws.cell(row=row, column=13, value=data.get('date_commande', ''))  # Date commande
-            ws.cell(row=row, column=14, value=data.get('date_facture', ''))  # Date facture
+            ws.cell(row=row, column=13, value=format_date(data.get('date_commande', '')))  # Date commande
+            ws.cell(row=row, column=14, value=format_date(data.get('date_facture', '')))  # Date facture
             ws.cell(row=row, column=15, value='')  # Date expédition
             ws.cell(row=row, column=16, value=data.get('commentaire', ''))  # Commentaire
-            ws.cell(row=row, column=17, value=date_acompte_iso)  # date1
+            ws.cell(row=row, column=17, value=format_date(date_acompte_iso))  # date1
             ws.cell(row=row, column=18, value=montant_acompte)  # acompte1
             ws.cell(row=row, column=19, value='')  # date2
             ws.cell(row=row, column=20, value='')  # acompte2
@@ -263,8 +283,8 @@ def create_excel_from_data(invoice_data: dict) -> Path:
             ws.cell(row=row, column=26, value=taux_tva)  # tva
             ws.cell(row=row, column=27, value='')  # ttc
             ws.cell(row=row, column=28, value=data.get('TOTAL', {}).get('total_ttc', 0))  # Credit TTC
-            ws.cell(row=row, column=29, value=data.get('TOTAL', {}).get('total_ht', 0))  # Credit HT
-            ws.cell(row=row, column=30, value=data.get('TOTAL', {}).get('remise', ''))  # remise
+            ws.cell(row=row, column=29, value=total_ht)  # Credit HT avec remise
+            ws.cell(row=row, column=30, value=remise)  # remise
             ws.cell(row=row, column=31, value=data.get('TOTAL', {}).get('tva', 0))  # TVA Collectee
             ws.cell(row=row, column=32, value=data.get('nombre_articles', 0))  # quantité
 
