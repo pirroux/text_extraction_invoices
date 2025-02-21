@@ -92,8 +92,8 @@ def create_invoice_dataframe(invoices_data):
             row['Client'] = data.get('client_name', '')
             row['Typologie'] = ''
             row['Banque créditée'] = ''
-            row['Date commande'] = date
-            row['Date facture'] = date
+            row['Date commande'] = data.get('date_commande', '')
+            row['Date facture'] = data.get('date_facture', '')
             row['Date expédition'] = ''
             row['Commentaire'] = data.get('commentaire', '')
             row['date1'] = date_acompte_iso if 'date_acompte_iso' in locals() else ''
@@ -261,8 +261,8 @@ def create_excel_from_data(invoice_data: dict) -> Path:
             ws.cell(row=row, column=10, value=data.get('client_name', ''))  # Client
             ws.cell(row=row, column=11, value='')  # Typologie
             ws.cell(row=row, column=12, value='')  # Banque créditée
-            ws.cell(row=row, column=13, value=date)  # Date commande
-            ws.cell(row=row, column=14, value=date)  # Date facture
+            ws.cell(row=row, column=13, value=data.get('date_commande', ''))  # Date commande
+            ws.cell(row=row, column=14, value=data.get('date_facture', ''))  # Date facture
             ws.cell(row=row, column=15, value='')  # Date expédition
             ws.cell(row=row, column=16, value=data.get('commentaire', ''))  # Commentaire
             ws.cell(row=row, column=17, value=date_acompte_iso)  # date1

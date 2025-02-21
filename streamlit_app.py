@@ -60,7 +60,7 @@ if uploaded_files:
                                 <a href="#"
                                    onclick="return false;"
                                    style="text-decoration: none; color: #0066cc; cursor: pointer;">
-                                    📎 Téléchrager {filename} manuellement
+                                    📎 Télécharger {filename} manuellement
                                 </a>
                             </div>
                             """,

@@ -6,6 +6,9 @@ data_factures/*.pdf
 *.png
 *.PNG
 
+# Fichiers Excel
+*.xlsx
+
 # Temporary files
 temp_files/
 factures_auto_*.xlsx

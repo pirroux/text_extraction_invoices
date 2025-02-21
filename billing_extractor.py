@@ -204,24 +204,30 @@ class InvoiceExtractor:
                 'tva': 0.0,
                 'frais_expedition': 0.0
             },
-            'Réseau_Vente': "",  # Renommé de categorie_vente à Réseau_Vente
-            'Type_Vente': "",  # Renommé de type_vente à Type_Vente
+            'Réseau_Vente': "",
+            'Type_Vente': "",
             'commentaire': "",
             'statut_paiement': "Payé" if invoice_type == 'internet' else "",
             'reglement': "carte bancaire" if invoice_type == 'internet' else "",
             'numero_client': "",
-            'client_name': ""
+            'client_name': "",
+            'date_facture': "",
+            'date_commande': ""
         }
 
         # Patterns adaptés selon le type de facture
         patterns = {
             'numero_facture': (
-                r'N° de commande\s*:\s*(\d+)' if invoice_type == 'internet'
+                r'N° de facture\s*:\s*([^\n]+)' if invoice_type == 'internet'
                 else r'N°\s*:\s*([A-Z0-9-]+)'
             ),
-            'date': (
-                r'Date de commande\s*:\s*(\d{2}/\d{2}/\d{4})' if invoice_type == 'internet'
+            'date_facture': (
+                r'Date de facture\s*:\s*(\d{1,2}\s+\w+\s+\d{4})' if invoice_type == 'internet'
                 else r'Date[:\s]+(\d{2}[/-]\d{2}[/-]\d{4})'
+            ),
+            'date_commande': (
+                r'Date de commande\s*:\s*(\d{1,2}\s+\w+\s+\d{4})' if invoice_type == 'internet'
+                else None
             ),
             'numero_client': r'N°\s*client\s*:\s*(CLT\d+)',
             'client_name': (
@@ -250,6 +256,11 @@ class InvoiceExtractor:
                         if key == 'reglement' and invoice_type == 'meg' and ('cheque' in value.lower() or 'chèque' in value.lower()):
                             value = 'cheque'
                         data[key] = value
+                    elif key == 'numero_facture' and invoice_type == 'internet':
+                        # Si pas de numéro de facture, essayer le numéro de commande
+                        commande_match = re.search(r'N° de commande\s*:\s*(\d+)', text)
+                        if commande_match:
+                            data[key] = commande_match.group(1).strip()
 
         # Extraction des articles
         articles = self.extract_articles(text, invoice_type)
@@ -260,16 +271,21 @@ class InvoiceExtractor:
         amounts = self.extract_amounts(text, invoice_type)
         data['TOTAL'].update(amounts)
 
-        # Formatage de la date
-        if 'date' in data:
-            try:
-                date_obj = datetime.strptime(data['date'], '%d/%m/%Y')
-                data['date'] = date_obj.strftime('%Y-%m-%d')
-            except ValueError:
+        # Conversion des dates
+        for date_key in ['date_facture', 'date_commande']:
+            if data.get(date_key):
                 try:
-                    date_obj = datetime.strptime(data['date'], '%d-%m-%Y')
-                    data['date'] = date_obj.strftime('%Y-%m-%d')
-                except ValueError:
+                    date_fr = data[date_key]
+                    mois_fr = {
+                        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
+                        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
+                        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
+                    }
+                    for mois, num in mois_fr.items():
+                        date_fr = date_fr.replace(mois, num)
+                    jour, mois, annee = re.match(r'(\d{1,2})\s*(\d{2})\s*(\d{4})', date_fr).groups()
+                    data[date_key] = f"{annee}-{mois}-{jour.zfill(2)}"
+                except (ValueError, AttributeError):
                     pass
 
         return {

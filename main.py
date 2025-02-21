@@ -83,7 +83,7 @@ def process_pdf(pdf_path: Path) -> Path:
 
 if __name__ == "__main__":
     # Test processing
-    pdf_folder = Path("data_factures")
+    pdf_folder = Path("data_factures/facturesv3")
     pdfs = list(pdf_folder.glob("*.pdf"))
     if pdfs:
         try:
