@@ -187,15 +187,17 @@ def create_excel_from_data(invoice_data: dict) -> Path:
     ws = wb.active
     ws.title = "Factures"
 
-    # Utiliser exactement les mêmes headers que create_invoice_dataframe
-    headers = ['Type-facture', 'n°ordre', 'saisie', 'Syst', 'N° Syst.', 'comptable', 'Type_facture',
-              'Type_Vente', 'Réseau_Vente', 'Client', 'Typologie', 'Banque créditée',
-              'Date commande', 'Date facture', 'Date expédition', 'Commentaire',
-              'date1', 'acompte1', 'date2', 'acompte2', 'Date solde', 'solde',
-              'contrôle paiement', 'reste dû', 'AVO', 'tva', 'ttc', 'Credit TTC',
-              'Credit HT', 'remise', 'TVA Collectee', 'quantité']
+    # Définir les en-têtes
+    headers = [
+        'Type-facture', 'n°ordre', 'saisie', 'Syst', 'N° Syst.', 'comptable', 'Type_facture',
+        'Type_Vente', 'Réseau_Vente', 'Client', 'Typologie', 'Banque créditée',
+        'Date commande', 'Date facture', 'Date expédition', 'Commentaire',
+        'date1', 'acompte1', 'date2', 'acompte2', 'Date solde', 'solde',
+        'contrôle paiement', 'reste dû', 'AVO', 'tva', 'ttc', 'Credit TTC',
+        'Credit HT', 'remise', 'TVA Collectee', 'quantité'
+    ]
 
-    # Ajouter les headers pour les 20 articles
+    # Ajouter les en-têtes pour les articles
     for i in range(1, 21):
         headers.extend([f'supfam{i}', f'fam{i}', f'ref{i}', f'q{i}', f'prix{i}',
                       f'r€{i}', f'ht{i}', f'tva€{i}'])
@@ -209,22 +211,6 @@ def create_excel_from_data(invoice_data: dict) -> Path:
     for filename, invoice in invoice_data.items():
         try:
             data = invoice['data']
-
-            # Extraire la date de commande pour les factures internet
-            date = data.get('date', '')
-            if data.get('type') == 'internet' and 'text' in invoice:
-                date_match = re.search(r'Date de commande\s*:\s*(\d{1,2}\s*\w+\s*\d{4})', invoice['text'])
-                if date_match:
-                    date_fr = date_match.group(1).strip()
-                    mois_fr = {
-                        'janvier': '01', 'février': '02', 'mars': '03', 'avril': '04',
-                        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08',
-                        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12'
-                    }
-                    for mois, num in mois_fr.items():
-                        date_fr = date_fr.replace(mois, num)
-                    jour, mois, annee = re.match(r'(\d{1,2})\s*(\d{2})\s*(\d{4})', date_fr).groups()
-                    date = f"{annee}-{mois}-{jour.zfill(2)}"
 
             # Extraire les informations d'acompte
             acompte_match = re.search(r'Echéance\(s\)\s*Acompte\s*de\s*(\d+[\s\d]*,\d+)\s*€\s*au\s*(\d{2}/\d{2}/\d{4})', invoice['text'])

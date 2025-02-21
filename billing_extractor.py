@@ -231,8 +231,10 @@ class InvoiceExtractor:
             ),
             'numero_client': r'N°\s*client\s*:\s*(CLT\d+)',
             'client_name': (
-                r'FACTURE\s+([^\n]+?)\s+N° de commande' if invoice_type == 'internet'
-                else r'(?:N°\s*client\s*:[^\n]+\n)(?:(?:Monsieur|Madame|M\.|Mme\.)\s*)?([A-Za-zÀ-ÿ\s\-\']+?)(?:\n|$)'
+                # Pour les factures internet
+                r'FACTURE\s*\n(?!.*?NOMADS)([^\n]+?)(?:\s*N°\s*(?:de\s*facture|de\s*commande)|Résidence|Date|$)' if invoice_type == 'internet'
+                # Pour les factures MEG
+                else r'N°\s*client\s*:\s*(?:CLT\d+)\s*\n(?!.*?NOMADS)([^\n]+?)(?:\s*NOMADS|\s*$)'
             ),
             'Réseau_Vente': r'20\.(?:0[1-9]|10)\.\d{2}',  # Pattern pour 20.XX.XX complet
             'Type_Vente': r'20\.(?:0[1-9]|10)',  # Pattern pour 20.XX uniquement
@@ -253,9 +255,14 @@ class InvoiceExtractor:
                     match = re.search(pattern, text, re.IGNORECASE)
                     if match:
                         value = match.group(1).strip()
-                        if key == 'reglement' and invoice_type == 'meg' and ('cheque' in value.lower() or 'chèque' in value.lower()):
+                        # Vérification supplémentaire pour client_name
+                        if key == 'client_name':
+                            if value and 'NOMADS' not in value.upper():
+                                data[key] = value
+                        elif key == 'reglement' and invoice_type == 'meg' and ('cheque' in value.lower() or 'chèque' in value.lower()):
                             value = 'cheque'
-                        data[key] = value
+                        else:
+                            data[key] = value
                     elif key == 'numero_facture' and invoice_type == 'internet':
                         # Si pas de numéro de facture, essayer le numéro de commande
                         commande_match = re.search(r'N° de commande\s*:\s*(\d+)', text)
