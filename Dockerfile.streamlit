@@ -27,7 +27,7 @@ COPY . .
 RUN mkdir -p temp_files && chmod 777 temp_files
 
 # Exposition du port
-EXPOSE 8000
+EXPOSE 8501
 
-# Commande de démarrage pour FastAPI
-CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
+# Commande de démarrage pour Streamlit
+CMD streamlit run streamlit_app.py --server.port ${PORT:-8501} --server.address 0.0.0.0

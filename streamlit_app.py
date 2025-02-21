@@ -2,10 +2,21 @@ import streamlit as st
 import requests
 import base64
 import os
+from dotenv import load_dotenv
 from create_invoice_excel import create_excel_from_data, load_invoice_data
+from google.cloud import storage
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 # Configuration de l'API endpoint
 API_URL = os.getenv("API_URL", "http://fastapi:8000")
+
+# Initialiser le client Storage
+storage_client = storage.Client()
+PROJECT_ID = os.getenv("PROJECT_ID", "nomadsfacturation")
+bucket_name = f"{PROJECT_ID}-temp-files"
+bucket = storage_client.bucket(bucket_name)
 
 st.set_page_config(
     page_title="Analyse de Factures PDF",
@@ -56,13 +67,18 @@ if uploaded_files:
                         st.success(f"📂 Fichier Excel créé avec succès ! 🤙")
 
                         # Proposer le téléchargement via Streamlit
-                        with open(file_path, "rb") as f:
-                            st.download_button(
-                                label=f"📎 Télécharger {filename}",
-                                data=f,
-                                file_name=filename,
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            )
+                        blob = bucket.blob(filename)
+                        blob.upload_from_string(response.content)
+
+                        # Pour le téléchargement
+                        blob = bucket.blob(filename)
+                        file_content = blob.download_as_bytes()
+                        st.download_button(
+                            label=f"📎 Télécharger {filename}",
+                            data=file_content,
+                            file_name=filename,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
 
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la sauvegarde : {str(e)}")
