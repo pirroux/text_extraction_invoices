@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copie du code source
 COPY . .
 
+# Création du dossier pour les fichiers temporaires
+RUN mkdir -p temp_files && chmod 777 temp_files
+
 # Exposition des ports
 EXPOSE 8000 8501
 

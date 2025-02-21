@@ -5,7 +5,7 @@ import os
 from create_invoice_excel import create_excel_from_data, load_invoice_data
 
 # Configuration de l'API endpoint
-API_URL = "http://localhost:8000/analyze_pdfs/"
+API_URL = os.getenv("API_URL", "http://fastapi:8000")
 
 st.set_page_config(
     page_title="Analyse de Factures PDF",
@@ -34,7 +34,7 @@ if uploaded_files:
                 files = [("files", (file.name, file.getvalue(), "application/pdf")) for file in uploaded_files]
 
                 # Envoyer tous les fichiers en une seule requête
-                response = requests.post(API_URL, files=files, timeout=60)
+                response = requests.post(f"{API_URL}/analyze_pdfs/", files=files, timeout=60)
 
                 if response.status_code == 200:
                     st.success("✅ Analyse des documents terminée avec succès ! 🎉")
@@ -44,32 +44,29 @@ if uploaded_files:
                     filename = content_disposition.split('filename=')[-1].strip('"') if 'filename=' in content_disposition else "recapitulatif.xlsx"
 
                     try:
-                        # Enregistrer le fichier Excel dans Téléchargements
-                        download_folder = os.path.expanduser("~/Downloads")
-                        file_path = os.path.join(download_folder, filename)
+                        # Créer le dossier temp_files s'il n'existe pas
+                        os.makedirs('temp_files', exist_ok=True)
+
+                        # Sauvegarder dans le dossier temp_files
+                        file_path = os.path.join('temp_files', filename)
 
                         with open(file_path, "wb") as f:
                             f.write(response.content)
 
-                        st.success(f"📂 Fichier Excel sauvegardé dans Téléchargements ! 🤙")
+                        st.success(f"📂 Fichier Excel créé avec succès ! 🤙")
 
-                        # Lien de téléchargement manuel avec nom du fichier
-                        st.markdown(
-                            f"""
-                            <div style='margin-top: 1em;'>
-                                <a href="#"
-                                   onclick="return false;"
-                                   style="text-decoration: none; color: #0066cc; cursor: pointer;">
-                                    📎 Télécharger {filename} manuellement
-                                </a>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                        # Proposer le téléchargement via Streamlit
+                        with open(file_path, "rb") as f:
+                            st.download_button(
+                                label=f"📎 Télécharger {filename}",
+                                data=f,
+                                file_name=filename,
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
 
                     except Exception as e:
                         st.error(f"❌ Erreur lors de la sauvegarde : {str(e)}")
-                        # Proposer le téléchargement manuel uniquement en cas d'erreur
+                        # Proposer le téléchargement direct en cas d'erreur
                         st.download_button(
                             label=f"📎 Télécharger {filename}",
                             data=response.content,

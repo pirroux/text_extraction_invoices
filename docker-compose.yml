@@ -1,17 +1,27 @@
-version: '3.8'
+version: '3'
 
 services:
-  nomads-facturation:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: nomads-facturation:python3.12
+  fastapi:
+    build: .
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
     ports:
-      - "8000:8000"  # FastAPI
-      - "8501:8501"  # Streamlit
+      - "8000:8000"
     volumes:
-      - ./data:/app/data
+      - .:/app
+      - temp_files:/app/temp_files
+
+  streamlit:
+    build: .
+    command: streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      - temp_files:/app/temp_files
     environment:
-      - STREAMLIT_SERVER_PORT=8501
-      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
-      - PYTHON_VERSION=3.12
+      - API_URL=http://fastapi:8000
+    depends_on:
+      - fastapi
+
+volumes:
+  temp_files:
