@@ -42,7 +42,29 @@ var/
 # Environnement virtuel
 venv/
 ENV/
+nomads_facturation/
 
 # Logs et bases de données
 *.log
 *.sqlite
+
+# Fichiers de configuration et clés
+*.env
+.env
+config.ini
+credentials.json
+token.json
+
+# Clés de compte de service Google Cloud
+service_account_keys/
+*-[a-f0-9]*.json
+*credentials*.json
+*service-account*.json
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de données sensibles
+factures.json
+*secrets*
