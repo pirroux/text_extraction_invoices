@@ -1,6 +1,6 @@
 # Fichiers PDF
 *.pdf
-data_factures/*.pdf
+data_factures/
 
 # Fichiers images
 *.png
@@ -11,7 +11,6 @@ data_factures/*.pdf
 
 # Temporary files
 temp_files/
-factures_auto_*.xlsx
 
 # Python
 __pycache__/

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Créer un dossier temporaire persistant pour les fichiers
+# Create temp_files directory if it doesn't exist
 TEMP_DIR = Path("temp_files")
 TEMP_DIR.mkdir(exist_ok=True)
 
@@ -48,6 +48,9 @@ def process_pdfs(pdf_paths):
         try:
             logger.info(f"Processing file: {pdf_path}")
 
+            # Get just the filename without the path
+            filename = os.path.basename(pdf_path)
+
             # Vérifier que le fichier existe
             if not os.path.exists(str(pdf_path)):
                 logger.error(f"File not found: {pdf_path}")
@@ -62,16 +65,27 @@ def process_pdfs(pdf_paths):
             # Extraire les données de la facture
             logger.info("Extracting invoice data...")
             data = extractor.extract_invoice_data(text)
-            logger.info(f"Extracted data: {data}")
+
+            # Calculate total quantity from articles
+            total_quantity = 0
+            articles = data.get("invoice_data", {}).get("articles", [])
+            for article in articles:
+                total_quantity += article.get("quantite", 0)
+
+            logger.info(f"Total quantity calculated: {total_quantity}")
+
+            # Update nombre_articles with the actual sum of quantities
+            if "invoice_data" in data:
+                data["invoice_data"]["nombre_articles"] = total_quantity
 
             # Stocker les données dans le format attendu par create_invoice_dataframe
-            invoices_data[pdf_path.name] = {
+            invoices_data[filename] = {
                 "text": text,
                 "data": {
                     "type": data.get("invoice_data", {}).get("type", ""),
                     "TOTAL": data.get("invoice_data", {}).get("TOTAL", {}),
                     "articles": data.get("invoice_data", {}).get("articles", []),
-                    "nombre_articles": data.get("invoice_data", {}).get("nombre_articles", 0),
+                    "nombre_articles": total_quantity,  # Use calculated total
                     "Type_Vente": data.get("invoice_data", {}).get("Type_Vente", ""),
                     "Réseau_Vente": data.get("invoice_data", {}).get("Réseau_Vente", ""),
                     "commentaire": data.get("invoice_data", {}).get("commentaire", ""),
@@ -95,12 +109,18 @@ def process_pdfs(pdf_paths):
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(invoices_data, f, ensure_ascii=False, indent=2)
 
+        logger.info(f"JSON data saved to {json_path}")
+
         # Générer le fichier Excel
         logger.info("Generating Excel file...")
-        excel_path = TEMP_DIR / "factures.xlsx"
+        excel_path = TEMP_DIR / generate_excel_filename()
 
         # Créer le DataFrame
         df = create_invoice_dataframe(invoices_data)
+
+        # Log the quantité column to verify it's correct
+        if 'quantité' in df.columns:
+            logger.info(f"Quantité values in DataFrame: {df['quantité'].tolist()}")
 
         # Sauvegarder avec le formatage
         with pd.ExcelWriter(excel_path, engine='xlsxwriter') as writer:
@@ -182,6 +202,32 @@ async def startup_event():
             file.unlink()
     except Exception as e:
         logger.error(f"Erreur lors du nettoyage initial: {str(e)}")
+
+@app.get("/debug/json")
+async def debug_json():
+    """Endpoint to check the JSON data"""
+    try:
+        json_path = TEMP_DIR / "factures.json"
+        if not json_path.exists():
+            return {"error": "No JSON data found"}
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Return a summary to avoid overwhelming response
+        summary = {}
+        for filename, invoice in data.items():
+            articles = invoice.get('data', {}).get('articles', [])
+            total_qty = sum(article.get('quantite', 0) for article in articles)
+            summary[filename] = {
+                "article_count": len(articles),
+                "total_quantity": total_qty,
+                "nombre_articles": invoice.get('data', {}).get('nombre_articles', 0)
+            }
+
+        return {"summary": summary}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,28 +1,36 @@
 import streamlit as st
 import requests
-import base64
 import os
 from dotenv import load_dotenv
-from create_invoice_excel import create_excel_from_data, load_invoice_data
-from google.cloud import storage
+from create_invoice_excel import create_invoice_dataframe, format_excel, load_invoice_data
+import pandas as pd
+from datetime import datetime
+import pytz
+import json
+from pathlib import Path
+from pdf_extractor import extract_text_from_pdf
+from billing_extractor import InvoiceExtractor
 
-# Charger les variables d'environnement depuis .env
-load_dotenv()
-
-# Configuration de l'API endpoint
-API_URL = os.getenv("API_URL", "http://fastapi:8000")
-
-# Initialiser le client Storage
-storage_client = storage.Client()
-PROJECT_ID = os.getenv("PROJECT_ID", "nomadsfacturation")
-bucket_name = f"{PROJECT_ID}-temp-files"
-bucket = storage_client.bucket(bucket_name)
-
+# Set page configuration (must be the first Streamlit command)
 st.set_page_config(
     page_title="Analyse de Factures PDF",
     page_icon="📊",
     layout="centered"
 )
+
+# Function to reload environment variables
+def reload_env():
+    load_dotenv()
+
+# Initial load of environment variables
+reload_env()
+
+# Configuration de l'API endpoint
+API_URL = os.getenv("API_URL", "http://fastapi:8000")
+PROJECT_ID = os.getenv("PROJECT_ID", "nomadsfacturation")
+
+# Create temp_files directory if it doesn't exist
+os.makedirs('temp_files', exist_ok=True)
 
 # Centrer le titre Nomads Surfing
 st.markdown("<h1 style='text-align: center;'>Nomads Surfing 🌊</h1>", unsafe_allow_html=True)
@@ -33,6 +41,87 @@ st.markdown("<h2 style='text-align: center;'>Analyse automatique de factures PDF
 # Upload multiple PDF files
 uploaded_files = st.file_uploader(" ", type="pdf", accept_multiple_files=True)
 
+def process_pdfs_locally(uploaded_files):
+    """Process PDFs locally using the same logic as app.py"""
+    # Initialiser l'extracteur
+    extractor = InvoiceExtractor()
+
+    # Dictionnaire pour stocker les données des factures
+    invoices_data = {}
+
+    # Traiter chaque PDF
+    for uploaded_file in uploaded_files:
+        try:
+            # Save the PDF locally
+            pdf_path = os.path.join('temp_files', uploaded_file.name)
+            with open(pdf_path, 'wb') as f:
+                f.write(uploaded_file.getvalue())
+
+            # Extract text from PDF
+            extracted_data = extract_text_from_pdf(pdf_path)
+            text = extracted_data.get('text', '')
+
+            # Extract invoice data
+            data = extractor.extract_invoice_data(text)
+
+            # Calculate total quantity from articles
+            total_quantity = 0
+            articles = data.get("invoice_data", {}).get("articles", [])
+            for article in articles:
+                try:
+                    qty = float(article.get("quantite", 0))
+                    total_quantity += qty
+                except (ValueError, TypeError):
+                    st.warning(f"Could not convert quantity to number: {article.get('quantite')}")
+
+            # Update nombre_articles with the actual sum of quantities
+            if "invoice_data" in data:
+                data["invoice_data"]["nombre_articles"] = total_quantity
+
+            # Store data in the format expected by create_invoice_dataframe
+            invoices_data[uploaded_file.name] = {
+                "text": text,
+                "data": {
+                    "type": data.get("invoice_data", {}).get("type", ""),
+                    "TOTAL": data.get("invoice_data", {}).get("TOTAL", {}),
+                    "articles": data.get("invoice_data", {}).get("articles", []),
+                    "nombre_articles": total_quantity,  # Use calculated total
+                    "Type_Vente": data.get("invoice_data", {}).get("Type_Vente", ""),
+                    "Réseau_Vente": data.get("invoice_data", {}).get("Réseau_Vente", ""),
+                    "commentaire": data.get("invoice_data", {}).get("commentaire", ""),
+                    "statut_paiement": data.get("invoice_data", {}).get("statut_paiement", ""),
+                    "numero_client": data.get("invoice_data", {}).get("numero_client", ""),
+                    "client_name": data.get("invoice_data", {}).get("client_name", ""),
+                    "date_facture": data.get("invoice_data", {}).get("date_facture", ""),
+                    "date_commande": data.get("invoice_data", {}).get("date_commande", ""),
+                    "numero_facture": data.get("invoice_data", {}).get("numero_facture", "")
+                }
+            }
+        except Exception as e:
+            st.error(f"Error processing {uploaded_file.name}: {str(e)}")
+
+    # Save JSON data
+    json_path = os.path.join('temp_files', 'factures.json')
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(invoices_data, f, ensure_ascii=False, indent=2)
+
+    # Generate Excel filename
+    paris_tz = pytz.timezone('Europe/Paris')
+    current_time = datetime.now(paris_tz)
+    timestamp = current_time.strftime('%y%m%d%H%M%S')
+    filename = f'factures_auto_{timestamp}.xlsx'
+    excel_path = os.path.join('temp_files', filename)
+
+    # Create DataFrame using the same function as app.py
+    df = create_invoice_dataframe(invoices_data)
+
+    # Save with formatting
+    with pd.ExcelWriter(excel_path, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Factures', index=False)
+        format_excel(writer, df)
+
+    return excel_path, filename, df
+
 if uploaded_files:
     for uploaded_file in uploaded_files:
         st.write("📄 Fichier chargé :", uploaded_file.name)
@@ -41,84 +130,33 @@ if uploaded_files:
     if st.button("Analyser"):
         try:
             with st.spinner("🔄 Analyse en cours..."):
-                # Préparer les fichiers pour l'envoi
-                files = [("files", (file.name, file.getvalue(), "application/pdf")) for file in uploaded_files]
+                # Process PDFs locally using the same logic as app.py
+                excel_path, filename, df = process_pdfs_locally(uploaded_files)
 
-                # Envoyer tous les fichiers en une seule requête
-                response = requests.post(f"{API_URL}/analyze_pdfs/", files=files, timeout=60)
+                # Display summary information
+                st.success("✅ Analyse des documents terminée avec succès ! 🎉")
 
-                if response.status_code == 200:
-                    st.success("✅ Analyse des documents terminée avec succès ! 🎉")
 
-                    # Extraire le nom du fichier Excel depuis les headers
-                    content_disposition = response.headers.get('Content-Disposition', '')
-                    filename = content_disposition.split('filename=')[-1].strip('"') if 'filename=' in content_disposition else "recapitulatif.xlsx"
+                # Provide download button
+                with open(excel_path, 'rb') as f:
+                    excel_data = f.read()
 
-                    try:
-                        # Créer le dossier temp_files s'il n'existe pas
-                        os.makedirs('temp_files', exist_ok=True)
+                st.success(f"📂 Fichier Excel créé avec succès ! 🤙")
 
-                        # Sauvegarder dans le dossier temp_files
-                        file_path = os.path.join('temp_files', filename)
+                st.download_button(
+                    label=f"📎 Télécharger {filename}",
+                    data=excel_data,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
-                        with open(file_path, "wb") as f:
-                            f.write(response.content)
-
-                        st.success(f"📂 Fichier Excel créé avec succès ! 🤙")
-
-                        # Proposer le téléchargement via Streamlit
-                        blob = bucket.blob(filename)
-                        blob.upload_from_string(response.content)
-
-                        # Pour le téléchargement
-                        blob = bucket.blob(filename)
-                        file_content = blob.download_as_bytes()
-                        st.download_button(
-                            label=f"📎 Télécharger {filename}",
-                            data=file_content,
-                            file_name=filename,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-
-                    except Exception as e:
-                        st.error(f"❌ Erreur lors de la sauvegarde : {str(e)}")
-                        # Proposer le téléchargement direct en cas d'erreur
-                        st.download_button(
-                            label=f"📎 Télécharger {filename}",
-                            data=response.content,
-                            file_name=filename,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
-
-                else:
-                    try:
-                        error_detail = response.json().get('detail', 'Pas de détail disponible')
-                        st.error(f"❌ Erreur lors de l'analyse (Status {response.status_code}): {error_detail}")
-                    except:
-                        st.error(f"❌ Erreur inconnue. Status code: {response.status_code}")
-
-        except requests.exceptions.ConnectionError:
-            st.error("⚠ Impossible de se connecter à l'API. Vérifiez que le serveur FastAPI tourne bien sur le port 8000.")
-        except requests.exceptions.Timeout:
-            st.error("⏳ Le serveur met trop de temps à répondre. Réessayez plus tard.")
         except Exception as e:
             st.error(f"🚨 Une erreur est survenue : {str(e)}")
 
-def process_and_create_excel():
-    """Fonction simple qui utilise create_excel_from_data"""
-    try:
-        # Charger les données
-        invoices_data = load_invoice_data()
+# Add a footer with version information
+st.markdown("---")
+st.markdown("<div style='text-align: center; color: gray; font-size: 0.8em;'>Nomads Surfing - v1.0.0</div>", unsafe_allow_html=True)
 
-        # Utiliser directement la fonction de create_invoice_excel.py
-        excel_path = create_excel_from_data(invoices_data)
-
-        # Lire le fichier Excel créé
-        with open(excel_path, 'rb') as f:
-            excel_data = f.read()
-
-        return excel_data, excel_path.name
-
-    except Exception as e:
-        st.error(f"Erreur lors de la création de l'Excel : {str(e)}")
-        return None, None
+if __name__ == "__main__":
+    # Remove the recursive call that's causing multiple instances
+    pass

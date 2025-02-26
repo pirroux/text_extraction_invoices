@@ -80,12 +80,13 @@ def create_invoice_dataframe(invoices_data):
 
             # Calculer le taux de TVA et le total HT avec remise
             total_ht = data['TOTAL']['total_ht']
-            remise = data['TOTAL'].get('remise', 0)
+            remise_globale = data['TOTAL'].get('remise', 0)
             # Appliquer la remise si elle existe
-            if remise:
-                total_ht = total_ht - float(remise)
+            if remise_globale:
+                total_ht = total_ht - float(remise_globale)
             total_ttc = data['TOTAL']['total_ttc']
 
+            # Formater le taux de TVA au format XX,XX%
             if data.get('type') == 'meg':
                 taux_tva = f"{data['articles'][0]['tva']:.2f}%".replace('.', ',') if data['articles'] else ''
             else:
@@ -93,6 +94,65 @@ def create_invoice_dataframe(invoices_data):
                     taux_tva = f"{((total_ttc / total_ht) - 1) * 100:.2f}%".replace('.', ',')
                 else:
                     taux_tva = ''
+
+            # Calculate total quantity from articles - ensure this is done correctly
+            total_quantity = 0
+            articles = data.get('articles', [])
+            for article in articles:
+                try:
+                    # Make sure we're getting a number
+                    qty = float(article.get('quantite', 0))
+                    total_quantity += qty
+                except (ValueError, TypeError):
+                    # If conversion fails, try to handle it gracefully
+                    print(f"Warning: Could not convert quantity to number: {article.get('quantite')}")
+
+            # Remplir les articles et calculer la somme des remises
+            somme_remises = 0  # Pour stocker la somme des remises en euros
+
+            for i, article in enumerate(articles, 1):
+                if i > 20:
+                    break
+
+                # Get article data with safe defaults
+                reference = article.get('reference', '')
+                description = article.get('description', '')
+                quantite = article.get('quantite', 0)
+                prix_unitaire = article.get('prix_unitaire', 0)
+                remise_percent = article.get('remise', 0)
+
+                # Calculate values based on the type of invoice
+                if data.get('type') == 'meg':
+                    prix_ht = prix_unitaire
+                    montant_ht = article.get('montant_ht', prix_ht * quantite)
+                    # Calculer la remise en euros (remise_percent est un pourcentage)
+                    remise_euros = remise_percent * montant_ht
+                    taux_tva_decimal = article.get('tva', 0) / 100
+                    tva_euros = montant_ht * taux_tva_decimal
+                else:
+                    prix_ttc = prix_unitaire
+                    taux_tva = ((total_ttc / total_ht) - 1) if total_ht > 0 else 0
+                    prix_ht = prix_ttc / (1 + taux_tva) if taux_tva > 0 else prix_ttc
+                    montant_ht = prix_ht * quantite
+                    # Calculer la remise en euros
+                    remise_euros = remise_percent * montant_ht
+                    tva_euros = montant_ht * taux_tva
+
+                # Ajouter cette remise à la somme totale
+                somme_remises += remise_euros
+
+                # Fill in the row data
+                row[f'supfam{i}'] = ''
+                row[f'fam{i}'] = ''
+                row[f'ref{i}'] = reference
+                row[f'q{i}'] = quantite
+                row[f'prix{i}'] = round(prix_ht, 2)
+                row[f'r€{i}'] = round(remise_euros, 2)  # Utiliser la remise en euros
+                row[f'ht{i}'] = round(montant_ht, 2)
+                row[f'tva€{i}'] = round(tva_euros, 2)
+
+            # Utiliser la remise globale si elle existe, sinon utiliser la somme des remises
+            remise_finale = remise_globale if remise_globale else somme_remises
 
             # Remplir les données dans l'ordre exact des colonnes
             row['Type-facture'] = " "
@@ -124,37 +184,9 @@ def create_invoice_dataframe(invoices_data):
             row['ttc'] = ''
             row['Credit TTC'] = data.get('TOTAL', {}).get('total_ttc', 0)
             row['Credit HT'] = total_ht  # Utiliser le total HT avec remise
-            row['remise'] = remise
+            row['remise'] = round(remise_finale, 2)  # Utiliser la remise finale calculée
             row['TVA Collectee'] = data.get('TOTAL', {}).get('tva', 0)
-            row['quantité'] = data.get('nombre_articles', 0)
-
-            # Remplir les articles
-            articles = data.get('articles', [])
-            for i, article in enumerate(articles, 1):
-                if i > 20:
-                    break
-
-                # Calculs des montants
-                if data.get('type') == 'meg':
-                    prix_ht = article.get('prix_unitaire', 0)
-                    montant_ht = article.get('montant_ht', 0)
-                    taux_tva_decimal = article.get('tva', 0) / 100
-                    tva_euros = montant_ht * taux_tva_decimal
-                else:
-                    prix_ttc = article.get('prix_unitaire', 0)
-                    taux_tva = ((total_ttc / total_ht) - 1) if total_ht > 0 else 0
-                    prix_ht = prix_ttc / (1 + taux_tva)
-                    montant_ht = prix_ht * article.get('quantite', 1)
-                    tva_euros = montant_ht * taux_tva
-
-                row[f'supfam{i}'] = ''
-                row[f'fam{i}'] = ''
-                row[f'ref{i}'] = article.get('reference', '')
-                row[f'q{i}'] = article.get('quantite', '')
-                row[f'prix{i}'] = round(prix_ht, 2)
-                row[f'r€{i}'] = article.get('remise', '')
-                row[f'ht{i}'] = round(montant_ht, 2)
-                row[f'tva€{i}'] = round(tva_euros, 2)
+            row['quantité'] = total_quantity
 
             rows.append(row)
 
