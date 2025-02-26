@@ -8,6 +8,7 @@ data_factures/
 
 # Fichiers Excel
 *.xlsx
+factures_auto_*.xlsx
 
 # Temporary files
 temp_files/
@@ -68,3 +69,9 @@ Thumbs.db
 # Fichiers de données sensibles
 factures.json
 *secrets*
+
+# Video files
+*.mp4
+*.mov
+*.avi
+*.mkv
